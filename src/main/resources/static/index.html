@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hermes Study</title>
+<style>
+:root {
+  --bg: #f5f6f8;
+  --card: #ffffff;
+  --hover: #f0f2f5;
+  --border: #e2e5ec;
+  --text: #1e293b;
+  --text-sec: #64748b;
+  --text-muted: #94a3b8;
+  --blue: #3b82f6;
+  --blue-light: rgba(59,130,246,0.08);
+  --green: #10b981;
+  --green-light: rgba(16,185,129,0.08);
+  --amber: #f59e0b;
+  --amber-light: rgba(245,158,11,0.08);
+  --radius: 10px;
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  min-height: 100vh; -webkit-font-smoothing: antialiased;
+}
+.container {
+  max-width: 780px; margin: 0 auto; padding: 60px 24px;
+  display: flex; flex-direction: column; align-items: center;
+}
+
+/* Hero */
+.hero {
+  text-align: center; margin-bottom: 56px;
+}
+.hero .logo {
+  width: 56px; height: 56px; border-radius: 14px;
+  background: linear-gradient(135deg, #3b82f6, #6366f1);
+  display: inline-flex; align-items: center; justify-content: center;
+  margin-bottom: 20px; font-size: 22px; color: #fff; font-weight: 700;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.2);
+}
+.hero h1 {
+  font-size: 28px; font-weight: 700; letter-spacing: -0.3px;
+  margin-bottom: 8px;
+}
+.hero p {
+  font-size: 15px; color: var(--text-sec); line-height: 1.6; max-width: 480px;
+}
+.hero .badges {
+  display: flex; gap: 6px; justify-content: center; margin-top: 14px; flex-wrap: wrap;
+}
+.hero .badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 500;
+  background: var(--blue-light); color: var(--blue);
+}
+
+/* Module Cards */
+.cards {
+  display: flex; flex-direction: column; gap: 16px; width: 100%;
+}
+.card {
+  display: flex; align-items: center; gap: 20px;
+  padding: 28px 32px; background: var(--card);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  cursor: pointer; transition: all .2s; text-decoration: none; color: inherit;
+}
+.card:hover {
+  border-color: #d1d5db; box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  transform: translateY(-2px);
+}
+.card:active { transform: translateY(0); }
+.card .icon-wrap {
+  width: 56px; height: 56px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 24px; flex-shrink: 0;
+}
+.card .icon-wrap.green { background: var(--green-light); }
+.card .icon-wrap.blue { background: var(--blue-light); }
+.card .icon-wrap.amber { background: var(--amber-light); }
+.card .info { flex: 1; min-width: 0; }
+.card .info h2 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+.card .info p { font-size: 13px; color: var(--text-sec); line-height: 1.5; }
+.card .arrow { font-size: 18px; color: var(--text-muted); flex-shrink: 0; transition: transform .2s; }
+.card:hover .arrow { transform: translateX(4px); color: var(--text); }
+
+/* Divider */
+.divider {
+  width: 100%; display: flex; align-items: center; gap: 16px;
+  margin: 24px 0; color: var(--text-muted); font-size: 12px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Footer */
+.footer {
+  margin-top: 48px; text-align: center;
+  font-size: 12px; color: var(--text-muted);
+}
+.footer a { color: var(--blue); text-decoration: none; }
+.footer a:hover { text-decoration: underline; }
+
+/* Responsive */
+@media (max-width: 520px) {
+  .container { padding: 40px 16px; }
+  .hero h1 { font-size: 24px; }
+  .card { padding: 20px 20px; gap: 14px; }
+  .card .icon-wrap { width: 44px; height: 44px; font-size: 20px; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="hero">
+    <div class="logo">S</div>
+    <h1>Hermes Study</h1>
+    <p>个人学习实验项目，集成了两个独立的功能模块，方便日常使用和探索。</p>
+    <div class="badges">
+      <span class="badge">&#x1F3E0; Spring Boot 3.2</span>
+      <span class="badge">&#x1F9F0; MyBatis + MySQL</span>
+      <span class="badge">&#x2699; Java 17</span>
+    </div>
+  </div>
+
+  <div class="cards">
+    <a class="card" href="/stock">
+      <div class="icon-wrap blue">&#x1F4CA;</div>
+      <div class="info">
+        <h2>股市情报站</h2>
+        <p>实时采集 A 股大盘指数、热门板块排行、涨幅个股及财经要闻，一键掌握市场动态。</p>
+      </div>
+      <span class="arrow">&#x2192;</span>
+    </a>
+
+    <a class="card" href="/memo">
+      <div class="icon-wrap amber">&#x1F4DD;</div>
+      <div class="info">
+        <h2>Memo Board</h2>
+        <p>Markdown 备忘录，支持分类、标签、作者、星标管理，灵感随手记。</p>
+      </div>
+      <span class="arrow">&#x2192;</span>
+    </a>
+  </div>
+
+  <div class="divider">快捷入口</div>
+
+  <div class="cards">
+    <a class="card" href="/api/stock/hot" target="_blank" style="padding:16px 24px">
+      <div class="info">
+        <p style="font-size:13px;color:var(--text-sec)">&#x1F50D; 行情数据接口 <code style="font-size:12px;background:var(--bg);padding:1px 6px;border-radius:4px;font-family:var(--mono)">GET /api/stock/hot</code></p>
+      </div>
+      <span class="arrow" style="font-size:14px">&#x2197;</span>
+    </a>
+    <a class="card" href="/api/memo/memos" target="_blank" style="padding:16px 24px">
+      <div class="info">
+        <p style="font-size:13px;color:var(--text-sec)">&#x1F50D; 备忘录接口 <code style="font-size:12px;background:var(--bg);padding:1px 6px;border-radius:4px;font-family:var(--mono)">GET /api/memo/memos</code></p>
+      </div>
+      <span class="arrow" style="font-size:14px">&#x2197;</span>
+    </a>
+  </div>
+
+  <div class="footer">
+    Hermes Study &middot; <a href="https://github.com/dsqblack/hermes-study" target="_blank">GitHub</a>
+  </div>
+</div>
+</body>
+</html>

@@ -8,7 +8,7 @@
     <artifactId>stock-collector</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
-    <name>Stock Collector</name>
+    <name>Hermes Study</name>
 
     <parent>
         <groupId>org.springframework.boot</groupId>

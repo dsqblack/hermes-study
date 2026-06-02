@@ -9,6 +9,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class StockApplication {
     public static void main(String[] args) {
         SpringApplication.run(StockApplication.class, args);
-        System.out.println("********************** Stock Collector 启动成功 *********************");
+        System.out.println("********************** Hermes Study 启动成功 *********************");
     }
 }
