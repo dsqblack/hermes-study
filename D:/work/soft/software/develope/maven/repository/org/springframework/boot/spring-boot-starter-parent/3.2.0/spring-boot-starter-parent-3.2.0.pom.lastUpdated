@@ -1,5 +1,0 @@
-#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
-#Tue Jun 02 14:55:55 CST 2026
-60c6076d236e1f00edc67bce71fb231ae0674d49@default-nexus-http\://10.88.218.111\:8088/nexus/content/groups/public/.lastUpdated=1780383354836
-https\://maven.aliyun.com/repository/public/.lastUpdated=1780383355745
-http\://10.88.218.111\:8088/nexus/content/groups/public/.error=Could not transfer artifact org.springframework.boot\:spring-boot-starter-parent\:pom\:3.2.0 from/to nexus (http\://10.88.218.111\:8088/nexus/content/groups/public/)\: Connect to 10.88.218.111\:8088 [/10.88.218.111] failed\: Connection timed out
