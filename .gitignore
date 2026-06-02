@@ -9,3 +9,7 @@ target/
 .classpath
 .sts4-cache/
 .DS_Store
+D:/*
+logs/
+*.log
+

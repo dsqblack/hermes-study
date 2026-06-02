@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Memo Board</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+:root {
+  --primary: #e85d75;
+  --primary-light: #fce8ec;
+  --primary-dark: #d1445b;
+  --bg: #f5f0ec;
+  --bg-card: #ffffff;
+  --bg-hover: #faf7f5;
+  --border: #e8e2dc;
+  --text: #2d2a3d;
+  --text-secondary: #8a8394;
+  --text-muted: #b0a9b8;
+  --green: #34d399;
+  --amber: #f59e0b;
+  --indigo: #6366f1;
+  --red: #ef4444;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(45,42,61,0.06);
+  --shadow-hover: 0 8px 28px rgba(45,42,61,0.1);
+  --font: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --font-mono: "SF Mono", "Fira Code", "Consolas", monospace;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font); background: var(--bg); color: var(--text);
+  min-height: 100vh; -webkit-font-smoothing: antialiased;
+}
+/* ---- Header ---- */
+.header {
+  background: #fff; border-bottom: 1px solid var(--border);
+  padding: 0 28px; height: 60px; display: flex; align-items: center;
+  justify-content: space-between; position: sticky; top: 0; z-index: 100;
+}
+.header-left { display: flex; align-items: center; gap: 10px; }
+.header-left .brand { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+.header-left .brand .dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--primary); margin-right: 8px; }
+.header-right { display: flex; align-items: center; gap: 12px; }
+/* ---- Search ---- */
+.search-box {
+  position: relative; display: flex; align-items: center;
+}
+.search-box input {
+  height: 36px; width: 220px; padding: 0 14px 0 36px;
+  border: 1px solid var(--border); border-radius: 20px;
+  font-size: 13px; background: var(--bg); color: var(--text);
+  outline: none; transition: all .2s;
+}
+.search-box input:focus { border-color: var(--primary); width: 280px; background: #fff; }
+.search-box .sicon { position: absolute; left: 12px; color: var(--text-muted); font-size: 14px; pointer-events: none; }
+/* ---- Category Tabs ---- */
+.cat-bar {
+  display: flex; align-items: center; gap: 6px;
+  padding: 14px 28px 0; overflow-x: auto;
+  flex-shrink: 0;
+}
+.cat-tab {
+  padding: 7px 18px; border-radius: 20px; font-size: 13px; font-weight: 500;
+  border: 1px solid var(--border); background: #fff; color: var(--text-secondary);
+  cursor: pointer; transition: all .2s; white-space: nowrap;
+  flex-shrink: 0;
+}
+.cat-tab:hover { border-color: var(--primary); color: var(--primary); }
+.cat-tab.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+.cat-tab .cdot {
+  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+  margin-right: 6px; vertical-align: middle;
+}
+/* ---- Tag Filter ---- */
+.tag-filter {
+  display: flex; align-items: center; gap: 6px;
+  padding: 10px 28px 0; flex-wrap: wrap;
+}
+.tag-pill {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 12px; border-radius: 12px; font-size: 12px;
+  cursor: pointer; transition: all .2s; user-select: none;
+  background: #fff; border: 1px solid var(--border); color: var(--text-secondary);
+}
+.tag-pill:hover { opacity: 0.8; }
+.tag-pill.active { border-color: transparent; font-weight: 600; color: #fff; }
+.tag-pill .tdot { width: 6px; height: 6px; border-radius: 50%; display: inline-block; }
+/* ---- Masonry ---- */
+.board { padding: 16px 28px 100px; }
+.board.empty { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 50vh; color: var(--text-muted); gap: 10px; }
+.board.empty .emoji { font-size: 48px; opacity: 0.3; }
+.masonry {
+  column-count: 4; column-gap: 16px;
+}
+@media (max-width: 1200px) { .masonry { column-count: 3; } }
+@media (max-width: 900px) { .masonry { column-count: 2; } }
+@media (max-width: 600px) { .masonry { column-count: 1; } }
+.card {
+  break-inside: avoid; margin-bottom: 16px;
+  background: var(--bg-card); border-radius: var(--radius);
+  border: 1px solid var(--border); overflow: hidden;
+  cursor: pointer; transition: all .2s;
+  position: relative;
+}
+.card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+.card .cat-bar-top {
+  height: 4px; width: 100%; flex-shrink: 0;
+}
+.card-body { padding: 16px 18px 14px; }
+.card .title {
+  font-size: 15px; font-weight: 700; color: var(--text);
+  margin-bottom: 8px; line-height: 1.4;
+}
+.card .preview {
+  font-size: 13px; color: var(--text-secondary); line-height: 1.6;
+  overflow: hidden; display: -webkit-box; -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+.card .preview p { margin: 0; }
+.card .preview ul, .card .preview ol { padding-left: 18px; margin: 4px 0; }
+.card .preview code { font-size: 12px; background: var(--bg); padding: 1px 5px; border-radius: 3px; }
+.card-meta { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
+.card .tags { display: flex; gap: 4px; flex-wrap: wrap; }
+.card .tags .mini-tag {
+  font-size: 11px; padding: 1px 8px; border-radius: 8px;
+  color: #fff; font-weight: 500;
+}
+.card .footer {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 18px 12px; border-top: 1px solid var(--border);
+}
+.card .avatar {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.card .author-name { font-size: 12px; color: var(--text-secondary); }
+.card .time { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+.card .stars { display: flex; gap: 1px; margin-left: auto; }
+.card .stars .star { color: var(--amber); font-size: 13px; }
+.card .pin-badge {
+  position: absolute; top: 10px; right: 10px; font-size: 12px;
+  color: var(--text-muted); opacity: 0.5;
+}
+/* ---- FAB ---- */
+.fab {
+  position: fixed; bottom: 28px; right: 28px;
+  width: 52px; height: 52px; border-radius: 50%;
+  background: var(--primary); color: #fff; border: none;
+  font-size: 28px; cursor: pointer; box-shadow: 0 4px 16px rgba(232,93,117,0.35);
+  transition: all .2s; z-index: 50;
+  display: flex; align-items: center; justify-content: center;
+}
+.fab:hover { transform: scale(1.08); box-shadow: 0 6px 24px rgba(232,93,117,0.45); }
+.fab:active { transform: scale(0.95); }
+/* ---- Modal ---- */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; z-index: 200;
+  background: rgba(45,42,61,0.35); backdrop-filter: blur(4px);
+  align-items: center; justify-content: center; padding: 20px;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 16px; max-width: 580px;
+  width: 100%; max-height: 85vh; overflow-y: auto;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.15);
+  animation: modalIn .2s ease-out;
+}
+@keyframes modalIn { from { opacity: 0; transform: scale(0.95) translateY(10px); } to { opacity: 1; transform: none; } }
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 22px 0;
+}
+.modal-header h2 { font-size: 17px; font-weight: 700; }
+.modal-header .close {
+  border: none; background: none; font-size: 24px; color: var(--text-muted);
+  cursor: pointer; padding: 0 4px; line-height: 1;
+}
+.modal-header .close:hover { color: var(--text); }
+.modal-body { padding: 16px 22px 22px; display: flex; flex-direction: column; gap: 14px; }
+.modal-body label { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: block; margin-bottom: 4px; }
+.modal-body .field {  }
+.modal-body input, .modal-body textarea, .modal-body select {
+  width: 100%; padding: 10px 14px; border: 1px solid var(--border);
+  border-radius: 8px; font-size: 14px; font-family: var(--font);
+  background: #fff; outline: none; transition: border .2s;
+  color: var(--text);
+}
+.modal-body input:focus, .modal-body textarea:focus, .modal-body select:focus {
+  border-color: var(--primary);
+}
+.modal-body textarea { resize: vertical; min-height: 260px; font-family: var(--font-mono); font-size: 13px; line-height: 1.6; }
+/* ---- Compact metadata toolbar ---- */
+.meta-toolbar {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 10px 0 4px;
+}
+.meta-toolbar .mt-group {
+  display: flex; align-items: center; gap: 4px;
+}
+.meta-toolbar .mt-label {
+  font-size: 11px; color: var(--text-muted); white-space: nowrap;
+}
+.meta-toolbar select {
+  height: 30px; padding: 0 22px 0 8px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 12px; background: var(--bg);
+  color: var(--text); outline: none; cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23b0a9b8'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 6px center;
+}
+.meta-toolbar select:focus { border-color: var(--primary); }
+.meta-toolbar .star-rating { display: flex; gap: 1px; direction: rtl; }
+.meta-toolbar .star-rating input { display: none; }
+.meta-toolbar .star-rating label {
+  font-size: 18px; cursor: pointer; color: #ddd; transition: color .1s; line-height: 1; padding: 0 1px;
+}
+.meta-toolbar .star-rating label:hover,
+.meta-toolbar .star-rating label:hover ~ label,
+.meta-toolbar .star-rating input:checked ~ label { color: var(--amber); }
+.meta-toolbar .tag-trigger {
+  height: 30px; padding: 0 10px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 12px; background: var(--bg);
+  color: var(--text-secondary); cursor: pointer; transition: all .15s;
+  display: inline-flex; align-items: center; gap: 4px;
+}
+.meta-toolbar .tag-trigger:hover { border-color: var(--primary); }
+.meta-toolbar .tag-trigger .tcount {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 16px; height: 16px; border-radius: 8px;
+  background: var(--primary); color: #fff; font-size: 10px; font-weight: 700;
+}
+/* ---- Tag popup ---- */
+.tag-popup {
+  display: none; position: absolute; z-index: 210;
+  background: #fff; border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  padding: 10px; width: 200px; top: 100%; left: 0; margin-top: 4px;
+}
+.tag-popup.open { display: flex; flex-direction: column; gap: 4px; }
+.tag-popup .tp-item {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 8px; border-radius: 6px; cursor: pointer;
+  font-size: 13px; transition: background .1s;
+}
+.tag-popup .tp-item:hover { background: var(--bg); }
+.tag-popup .tp-item .tp-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tag-popup .tp-item .tp-name { flex: 1; color: var(--text); }
+.tag-popup .tp-item .tp-check { color: var(--primary); font-weight: 700; font-size: 14px; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.btn {
+  height: 38px; padding: 0 24px; border-radius: 8px; font-size: 14px;
+  font-weight: 600; cursor: pointer; transition: all .15s;
+  border: 1px solid var(--border); background: #fff; color: var(--text);
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.btn:hover { border-color: var(--primary); color: var(--primary); }
+.btn-primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+.btn-primary:hover { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; }
+.btn-danger { background: var(--red); border-color: var(--red); color: #fff; }
+.btn-danger:hover { opacity: 0.9; color: #fff; }
+/* ---- Detail Modal ---- */
+.detail-content { line-height: 1.8; font-size: 14px; color: var(--text); }
+.detail-content h1, .detail-content h2, .detail-content h3 { margin: 16px 0 8px; }
+.detail-content h1 { font-size: 20px; }
+.detail-content h2 { font-size: 17px; }
+.detail-content h3 { font-size: 15px; }
+.detail-content p { margin: 8px 0; }
+.detail-content ul, .detail-content ol { padding-left: 22px; margin: 8px 0; }
+.detail-content li { margin: 4px 0; }
+.detail-content code { font-size: 13px; background: var(--bg); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); }
+.detail-content pre {
+  background: #1f1d2b; color: #e0def4; padding: 14px 16px;
+  border-radius: 8px; overflow-x: auto; margin: 12px 0;
+  font-size: 13px; line-height: 1.6; font-family: var(--font-mono);
+}
+.detail-content pre code { background: none; padding: 0; color: inherit; }
+.detail-content blockquote {
+  border-left: 3px solid var(--primary); padding: 6px 14px;
+  margin: 10px 0; background: var(--primary-light);
+  border-radius: 0 6px 6px 0; color: var(--text-secondary);
+}
+.detail-content table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 13px; }
+.detail-content th, .detail-content td { border: 1px solid var(--border); padding: 8px 12px; text-align: left; }
+.detail-content th { background: var(--bg); font-weight: 600; }
+.detail-content img { max-width: 100%; border-radius: 8px; }
+.detail-content a { color: var(--primary); text-decoration: none; }
+.detail-content a:hover { text-decoration: underline; }
+.detail-meta { display: flex; align-items: center; gap: 10px; padding: 16px 22px 0; flex-wrap: wrap; }
+.detail-meta .davatar { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #fff; }
+.detail-meta .dname { font-size: 13px; color: var(--text-secondary); }
+.detail-meta .dtime { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+.detail-meta .dstars { display: flex; gap: 2px; }
+.detail-meta .dstars .dstar { color: var(--amber); font-size: 15px; }
+.detail-tags { display: flex; gap: 4px; flex-wrap: wrap; padding: 0 22px; margin-top: 10px; }
+.detail-tags .dtag { font-size: 12px; padding: 2px 10px; border-radius: 10px; color: #fff; font-weight: 500; }
+.detail-actions { display: flex; gap: 8px; justify-content: flex-end; padding: 16px 22px 18px; border-top: 1px solid var(--border); margin-top: 16px; }
+/* ---- Manage Drawer ---- */
+.mgmt-btn {
+  position: fixed; bottom: 28px; right: 92px;
+  height: 38px; padding: 0 18px; border-radius: 20px;
+  background: #fff; border: 1px solid var(--border); color: var(--text-secondary);
+  font-size: 13px; cursor: pointer; transition: all .15s; z-index: 49;
+  display: flex; align-items: center; gap: 6px;
+}
+.mgmt-btn:hover { border-color: var(--indigo); color: var(--indigo); }
+.mgmt-drawer {
+  display: none; position: fixed; top: 0; right: 0; bottom: 0;
+  width: 340px; background: #fff; z-index: 300;
+  box-shadow: -4px 0 24px rgba(0,0,0,0.08);
+  flex-direction: column; padding: 20px; gap: 16px;
+  overflow-y: auto;
+  animation: drawerIn .2s ease-out;
+}
+@keyframes drawerIn { from { transform: translateX(100%); } to { transform: none; } }
+.mgmt-drawer.open { display: flex; }
+.mgmt-drawer .dh { display: flex; justify-content: space-between; align-items: center; }
+.mgmt-drawer .dh h3 { font-size: 16px; font-weight: 700; }
+.mgmt-drawer .dh .close { border: none; background: none; font-size: 22px; color: var(--text-muted); cursor: pointer; }
+.mgmt-drawer .dsection {  }
+.mgmt-drawer .dsection .ds-title { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.mgmt-drawer .dsection .ds-list { display: flex; flex-direction: column; gap: 6px; }
+.mgmt-drawer .dsection .ds-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px; border-radius: 8px; background: var(--bg);
+  font-size: 13px;
+}
+.mgmt-drawer .dsection .ds-item .ds-color { width: 14px; height: 14px; border-radius: 4px; flex-shrink: 0; }
+.mgmt-drawer .dsection .ds-item .ds-name { flex: 1; }
+.mgmt-drawer .dsection .ds-item .ds-del { border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 16px; padding: 0 2px; }
+.mgmt-drawer .dsection .ds-item .ds-del:hover { color: var(--red); }
+.mgmt-drawer .dsection .ds-add { display: flex; gap: 6px; margin-top: 8px; }
+.mgmt-drawer .dsection .ds-add input, .mgmt-drawer .dsection .ds-add select {
+  flex: 1; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 13px; outline: none;
+}
+.mgmt-drawer .dsection .ds-add input:focus { border-color: var(--indigo); }
+.mgmt-drawer .dsection .ds-add button {
+  padding: 0 14px; background: var(--indigo); color: #fff; border: none;
+  border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px;
+}
+/* ---- Status ---- */
+.loading { display: flex; align-items: center; justify-content: center; min-height: 200px; gap: 10px; color: var(--text-muted); }
+.loading .spinner { width: 24px; height: 24px; border: 2px solid var(--border); border-top-color: var(--primary); border-radius: 50%; animation: spin .6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #ddd; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #ccc; }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- Header -->
+  <header class="header">
+    <div class="header-left">
+      <div class="brand"><span class="dot"></span>Memo Board</div>
+    </div>
+    <div class="header-right">
+      <div class="search-box">
+        <span class="sicon">&#x1F50D;</span>
+        <input type="text" id="searchInput" placeholder="搜索备忘录..." autocomplete="off">
+      </div>
+    </div>
+  </header>
+
+  <!-- Category Tabs -->
+  <div class="cat-bar" id="catBar"></div>
+
+  <!-- Tag Filter -->
+  <div class="tag-filter" id="tagFilter"></div>
+
+  <!-- Board -->
+  <div class="board" id="board">
+    <div class="masonry" id="masonry"></div>
+  </div>
+
+  <!-- FAB -->
+  <button class="fab" id="fabBtn" title="新增备忘录">+</button>
+  <button class="mgmt-btn" id="mgmtBtn">&#x2699; 管理</button>
+
+  <!-- Create/Edit Modal -->
+  <div class="modal-overlay" id="editModal">
+    <div class="modal" style="max-width:720px">
+      <div class="modal-header">
+        <h2 id="modalTitle">新建备忘录</h2>
+        <button class="close" id="modalClose">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="field">
+          <input type="text" id="mTitle" placeholder="标题..." maxlength="200" style="font-size:17px;font-weight:700;border:none;padding:4px 0;border-radius:0;border-bottom:2px solid transparent">
+        </div>
+        <div class="field" style="flex:1;display:flex;flex-direction:column">
+          <textarea id="mContent" placeholder="支持 Markdown 语法...
+
+# 标题
+- 列表
+**加粗** `代码`" style="flex:1;min-height:260px"></textarea>
+        </div>
+        <div class="meta-toolbar">
+          <div class="mt-group">
+            <span class="mt-label">作者</span>
+            <select id="mAuthor"></select>
+          </div>
+          <div class="mt-group">
+            <span class="mt-label">分类</span>
+            <select id="mCategory"><option value="">未分类</option></select>
+          </div>
+          <div class="mt-group">
+            <span class="mt-label">星级</span>
+            <div class="star-rating" id="starRating">
+              <input type="radio" name="stars" id="s5" value="5"><label for="s5">&#9733;</label>
+              <input type="radio" name="stars" id="s4" value="4"><label for="s4">&#9733;</label>
+              <input type="radio" name="stars" id="s3" value="3" checked><label for="s3">&#9733;</label>
+              <input type="radio" name="stars" id="s2" value="2"><label for="s2">&#9733;</label>
+              <input type="radio" name="stars" id="s1" value="1"><label for="s1">&#9733;</label>
+            </div>
+          </div>
+          <div class="mt-group" style="position:relative">
+            <span class="mt-label">标签</span>
+            <button class="tag-trigger" id="tagTrigger">&#x1F3F7; <span class="tcount" id="tagCount">0</span></button>
+            <div class="tag-popup" id="tagPopup"></div>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button class="btn" id="editCancel">取消</button>
+          <button class="btn btn-primary" id="editSave">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detail Modal -->
+  <div class="modal-overlay" id="detailModal">
+    <div class="modal" style="max-width:800px">
+      <div class="detail-meta" id="detailMeta"></div>
+      <div class="modal-header" style="padding-top:4px">
+        <h2 id="detailTitle"></h2>
+        <button class="close" id="detailClose">&times;</button>
+      </div>
+      <div class="detail-tags" id="detailTags"></div>
+      <div class="modal-body">
+        <div class="detail-content" id="detailContent"></div>
+      </div>
+      <div class="detail-actions">
+        <button class="btn" id="detailEditBtn">&#9998; 编辑</button>
+        <button class="btn btn-danger" id="detailDelBtn">&#128465; 删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Management Drawer -->
+  <div class="mgmt-drawer" id="mgmtDrawer">
+    <div class="dh"><h3>管理</h3><button class="close" id="mgmtClose">&times;</button></div>
+
+    <div class="dsection">
+      <div class="ds-title">分类</div>
+      <div class="ds-list" id="mgmtCategories"></div>
+      <div class="ds-add">
+        <input type="text" id="newCatName" placeholder="分类名称">
+        <select id="newCatColor">
+          <option value="#e85d75" style="background:#e85d75">&#9679;</option>
+          <option value="#6366f1" style="background:#6366f1">&#9679;</option>
+          <option value="#34d399" style="background:#34d399">&#9679;</option>
+          <option value="#f59e0b" style="background:#f59e0b">&#9679;</option>
+          <option value="#ec4899" style="background:#ec4899">&#9679;</option>
+          <option value="#8b5cf6" style="background:#8b5cf6">&#9679;</option>
+          <option value="#06b6d4" style="background:#06b6d4">&#9679;</option>
+        </select>
+        <button id="addCatBtn">+</button>
+      </div>
+    </div>
+
+    <div class="dsection">
+      <div class="ds-title">标签</div>
+      <div class="ds-list" id="mgmtTags"></div>
+      <div class="ds-add">
+        <input type="text" id="newTagName" placeholder="标签名称">
+        <select id="newTagColor">
+          <option value="#f59e0b" style="background:#f59e0b">&#9679;</option>
+          <option value="#ef4444" style="background:#ef4444">&#9679;</option>
+          <option value="#34d399" style="background:#34d399">&#9679;</option>
+          <option value="#6366f1" style="background:#6366f1">&#9679;</option>
+          <option value="#8b5cf6" style="background:#8b5cf6">&#9679;</option>
+          <option value="#06b6d4" style="background:#06b6d4">&#9679;</option>
+          <option value="#ec4899" style="background:#ec4899">&#9679;</option>
+        </select>
+        <button id="addTagBtn">+</button>
+      </div>
+    </div>
+
+    <div class="dsection">
+      <div class="ds-title">作者</div>
+      <div class="ds-list" id="mgmtAuthors"></div>
+      <div class="ds-add">
+        <input type="text" id="newAuthorName" placeholder="作者名称">
+        <select id="newAuthorColor">
+          <option value="#e85d75" style="background:#e85d75">&#9679;</option>
+          <option value="#6366f1" style="background:#6366f1">&#9679;</option>
+          <option value="#34d399" style="background:#34d399">&#9679;</option>
+          <option value="#f59e0b" style="background:#f59e0b">&#9679;</option>
+          <option value="#8b5cf6" style="background:#8b5cf6">&#9679;</option>
+          <option value="#06b4d4" style="background:#06b4d4">&#9679;</option>
+        </select>
+        <button id="addAuthorBtn">+</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ---- State ----
+  var state = {
+    memos: [],
+    categories: [],
+    tags: [],
+    authors: [],
+    activeCategory: null,
+    activeTag: null,
+    searchKeyword: '',
+    editingId: null,
+    viewingId: null,
+  };
+
+  var API = '/api/memo';
+
+  // ---- Fetch helpers ----
+  function api(url, opts) {
+    return fetch(API + url, opts).then(function(r) { return r.json(); });
+  }
+
+  function loadAll() {
+    return Promise.all([
+      api('/memos' + buildQuery()).then(function(d) { state.memos = d; }),
+      api('/categories').then(function(d) { state.categories = d; }),
+      api('/tags').then(function(d) { state.tags = d; }),
+      api('/authors').then(function(d) { state.authors = d; }),
+    ]);
+  }
+
+  function buildQuery() {
+    var params = [];
+    if (state.activeCategory) params.push('categoryId=' + state.activeCategory);
+    if (state.activeTag) params.push('tagId=' + state.activeTag);
+    if (state.searchKeyword) params.push('keyword=' + encodeURIComponent(state.searchKeyword));
+    return params.length ? '?' + params.join('&') : '';
+  }
+
+  // ---- Render ----
+  function escapeHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  function renderAll() {
+    renderCatTabs();
+    renderTagFilter();
+    renderMemos();
+    renderManage();
+  }
+
+  function renderCatTabs() {
+    var html = '<button class="cat-tab' + (state.activeCategory === null ? ' active' : '') + '" data-id="">全部</button>';
+    state.categories.forEach(function(c) {
+      html += '<button class="cat-tab' + (state.activeCategory === c.id ? ' active' : '') + '" data-id="' + c.id + '"><span class="cdot" style="background:' + c.color + '"></span>' + escapeHtml(c.name) + '</button>';
+    });
+    document.getElementById('catBar').innerHTML = html;
+    document.getElementById('catBar').querySelectorAll('.cat-tab').forEach(function(el) {
+      el.addEventListener('click', function() {
+        state.activeCategory = this.dataset.id ? parseInt(this.dataset.id) : null;
+        loadAll().then(renderAll);
+      });
+    });
+  }
+
+  function renderTagFilter() {
+    if (state.tags.length === 0) {
+      document.getElementById('tagFilter').innerHTML = '';
+      return;
+    }
+    var html = '';
+    state.tags.forEach(function(t) {
+      var active = state.activeTag === t.id;
+      html += '<span class="tag-pill' + (active ? ' active' : '') + '" data-id="' + t.id + '" style="border-color:' + (active ? t.color : '') + ';background:' + (active ? t.color : '') + '"><span class="tdot" style="background:' + t.color + '"></span>' + escapeHtml(t.name) + '</span>';
+    });
+    if (state.activeTag) {
+      html += '<span class="tag-pill" id="clearTag" style="color:var(--text-muted)">&#10005; 清除</span>';
+    }
+    document.getElementById('tagFilter').innerHTML = html;
+    document.getElementById('tagFilter').querySelectorAll('.tag-pill:not(#clearTag)').forEach(function(el) {
+      el.addEventListener('click', function() {
+        state.activeTag = this.dataset.id ? parseInt(this.dataset.id) : null;
+        loadAll().then(renderAll);
+      });
+    });
+    var clear = document.getElementById('clearTag');
+    if (clear) {
+      clear.addEventListener('click', function() {
+        state.activeTag = null;
+        loadAll().then(renderAll);
+      });
+    }
+  }
+
+  function renderStars(n) {
+    var s = '';
+    for (var i = 0; i < n; i++) s += '<span class="star">&#9733;</span>';
+    for (var i = n; i < 5; i++) s += '<span class="star" style="color:#ddd">&#9733;</span>';
+    return s;
+  }
+
+  function renderMemos() {
+    var container = document.getElementById('masonry');
+    var board = document.getElementById('board');
+    if (state.memos.length === 0) {
+      board.className = 'board empty';
+      container.innerHTML = '<div class="emoji">&#x1F4DD;</div><div style="font-size:16px;font-weight:500">还没有备忘录</div><div style="font-size:13px">点击右下角 + 新建第一条</div>';
+      return;
+    }
+    board.className = 'board';
+    var html = '';
+    state.memos.forEach(function(m) {
+      var preview = '';
+      if (m.content) {
+        var lines = m.content.split('\n').filter(function(l) { return l.trim() && !l.startsWith('#'); });
+        preview = lines.length ? lines[0] : m.content.substring(0, 80);
+        if (preview.length > 100) preview = preview.substring(0, 100) + '...';
+        preview = escapeHtml(preview);
+      }
+      var tagHtml = '';
+      if (m.tags) {
+        m.tags.forEach(function(t) {
+          tagHtml += '<span class="mini-tag" style="background:' + t.color + '">' + escapeHtml(t.name) + '</span>';
+        });
+      }
+      html += '<div class="card" data-id="' + m.id + '">';
+      if (m.categoryColor) {
+        html += '<div class="cat-bar-top" style="background:' + m.categoryColor + '"></div>';
+      }
+      if (m.pin) {
+        html += '<span class="pin-badge">&#x1F4CC;</span>';
+      }
+      html += '<div class="card-body">';
+      html += '<div class="title">' + escapeHtml(m.title) + '</div>';
+      if (preview) {
+        html += '<div class="preview">' + preview + '</div>';
+      }
+      html += '</div>';
+      html += '<div class="footer">';
+      if (m.authorColor) {
+        html += '<div class="avatar" style="background:' + m.authorColor + '">' + escapeHtml((m.authorName || '?')[0]) + '</div>';
+      }
+      html += '<span class="author-name">' + escapeHtml(m.authorName || '') + '</span>';
+      html += '<span class="stars">' + renderStars(m.stars || 1) + '</span>';
+      html += '</div>';
+      // Tags below footer
+      if (tagHtml) {
+        html += '<div style="padding:0 18px 12px"><div class="tags">' + tagHtml + '</div></div>';
+      }
+      html += '</div>';
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('.card').forEach(function(el) {
+      el.addEventListener('click', function() {
+        var id = parseInt(this.dataset.id);
+        showDetail(id);
+      });
+    });
+  }
+
+  function renderManage() {
+    // Categories
+    var catHtml = '';
+    state.categories.forEach(function(c) {
+      catHtml += '<div class="ds-item"><span class="ds-color" style="background:' + c.color + '"></span><span class="ds-name">' + escapeHtml(c.name) + '</span><button class="ds-del" data-type="cat" data-id="' + c.id + '">&times;</button></div>';
+    });
+    document.getElementById('mgmtCategories').innerHTML = catHtml;
+    document.getElementById('mgmtCategories').querySelectorAll('.ds-del').forEach(function(el) {
+      el.addEventListener('click', function() {
+        if (confirm('确定删除此分类？')) {
+          api('/categories/' + this.dataset.id, { method: 'DELETE' }).then(function() { loadAll().then(renderAll); });
+        }
+      });
+    });
+
+    // Tags
+    var tagHtml = '';
+    state.tags.forEach(function(t) {
+      tagHtml += '<div class="ds-item"><span class="ds-color" style="background:' + t.color + '"></span><span class="ds-name">' + escapeHtml(t.name) + '</span><button class="ds-del" data-type="tag" data-id="' + t.id + '">&times;</button></div>';
+    });
+    document.getElementById('mgmtTags').innerHTML = tagHtml;
+    document.getElementById('mgmtTags').querySelectorAll('.ds-del').forEach(function(el) {
+      el.addEventListener('click', function() {
+        if (confirm('确定删除此标签？')) {
+          api('/tags/' + this.dataset.id, { method: 'DELETE' }).then(function() { loadAll().then(renderAll); });
+        }
+      });
+    });
+
+    // Authors
+    var authHtml = '';
+    state.authors.forEach(function(a) {
+      authHtml += '<div class="ds-item"><span class="ds-color" style="background:' + a.avatarColor + '"></span><span class="ds-name">' + escapeHtml(a.name) + '</span><button class="ds-del" data-type="author" data-id="' + a.id + '">&times;</button></div>';
+    });
+    document.getElementById('mgmtAuthors').innerHTML = authHtml;
+    document.getElementById('mgmtAuthors').querySelectorAll('.ds-del').forEach(function(el) {
+      el.addEventListener('click', function() {
+        if (confirm('确定删除此作者？')) {
+          api('/authors/' + this.dataset.id, { method: 'DELETE' }).then(function() { loadAll().then(renderAll); });
+        }
+      });
+    });
+  }
+
+  // ---- Detail ----
+  function showDetail(id) {
+    state.viewingId = id;
+    api('/memos/' + id).then(function(m) {
+      if (!m) return;
+      document.getElementById('detailTitle').textContent = m.title;
+      document.getElementById('detailContent').innerHTML = marked.parse(m.content || '');
+      var starHtml = '';
+      for (var i = 0; i < (m.stars || 1); i++) starHtml += '<span class="dstar">&#9733;</span>';
+      for (var i = (m.stars || 1); i < 5; i++) starHtml += '<span class="dstar" style="color:#ddd">&#9733;</span>';
+      var tagHtml = '';
+      if (m.tags) {
+        m.tags.forEach(function(t) {
+          tagHtml += '<span class="dtag" style="background:' + t.color + '">' + escapeHtml(t.name) + '</span>';
+        });
+      }
+      document.getElementById('detailTags').innerHTML = tagHtml;
+      document.getElementById('detailMeta').innerHTML =
+        (m.authorColor ? '<span class="davatar" style="background:' + m.authorColor + '">' + escapeHtml((m.authorName || '?')[0]) + '</span>' : '') +
+        '<span class="dname">' + escapeHtml(m.authorName || '') + '</span>' +
+        (m.categoryName ? '<span style="font-size:12px;color:var(--text-muted)">&#xb7;</span><span style="font-size:12px;color:var(--text-muted)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + m.categoryColor + ';vertical-align:middle;margin-right:4px"></span>' + escapeHtml(m.categoryName) + '</span>' : '') +
+        '<span class="dstars">' + starHtml + '</span>' +
+        '<span class="dtime">' + (m.updateTime ? m.updateTime.substring(0,16).replace('T',' ') : '') + '</span>';
+      document.getElementById('detailDelBtn').dataset.id = m.id;
+      document.getElementById('detailEditBtn').dataset.id = m.id;
+      openModal('detailModal');
+    });
+  }
+
+  // ---- Modal ----
+  function openModal(id) {
+    document.getElementById(id).classList.add('open');
+  }
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('open');
+  }
+
+  // ---- Edit Modal ----
+  function openEdit(id) {
+    state.editingId = id || null;
+    document.getElementById('modalTitle').textContent = id ? '编辑备忘录' : '新建备忘录';
+    document.getElementById('mTitle').value = '';
+    document.getElementById('mContent').value = '';
+    document.getElementById('mAuthor').value = '';
+    document.getElementById('mCategory').value = '';
+    document.querySelectorAll('input[name="stars"]').forEach(function(el) { el.checked = el.value === '3'; });
+    state._selectedTags = [];
+
+    // Populate selects
+    var authSel = document.getElementById('mAuthor');
+    authSel.innerHTML = '';
+    state.authors.forEach(function(a) {
+      var opt = document.createElement('option');
+      opt.value = a.id; opt.textContent = a.name;
+      authSel.appendChild(opt);
+    });
+    var catSel = document.getElementById('mCategory');
+    catSel.innerHTML = '<option value="">未分类</option>';
+    state.categories.forEach(function(c) {
+      var opt = document.createElement('option');
+      opt.value = c.id; opt.textContent = c.name;
+      catSel.appendChild(opt);
+    });
+    renderTagPopup();
+
+    if (id) {
+      api('/memos/' + id).then(function(m) {
+        if (!m) return;
+        document.getElementById('mTitle').value = m.title;
+        document.getElementById('mContent').value = m.content || '';
+        document.getElementById('mAuthor').value = m.authorId || '';
+        document.getElementById('mCategory').value = m.categoryId || '';
+        document.querySelectorAll('input[name="stars"]').forEach(function(el) { el.checked = parseInt(el.value) === (m.stars || 3); });
+        if (m.tags) {
+          state._selectedTags = m.tags.map(function(t) { return t.id; });
+          updateTagUI();
+        }
+      });
+    }
+    openModal('editModal');
+  }
+
+  function renderTagPopup() {
+    state._selectedTags = state._selectedTags || [];
+    var container = document.getElementById('tagPopup');
+    var html = '';
+    state.tags.forEach(function(t) {
+      var sel = state._selectedTags.indexOf(t.id) !== -1;
+      html += '<div class="tp-item" data-id="' + t.id + '"><span class="tp-dot" style="background:' + t.color + '"></span><span class="tp-name">' + escapeHtml(t.name) + '</span>' + (sel ? '<span class="tp-check">&#10003;</span>' : '') + '</div>';
+    });
+    container.innerHTML = html;
+    container.querySelectorAll('.tp-item').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        var tid = parseInt(this.dataset.id);
+        var idx = state._selectedTags.indexOf(tid);
+        if (idx === -1) {
+          state._selectedTags.push(tid);
+        } else {
+          state._selectedTags.splice(idx, 1);
+        }
+        updateTagUI();
+      });
+    });
+    updateTagUI();
+  }
+
+  function updateTagUI() {
+    document.getElementById('tagCount').textContent = state._selectedTags.length;
+    document.querySelectorAll('#tagPopup .tp-item').forEach(function(el) {
+      var tid = parseInt(el.dataset.id);
+      var sel = state._selectedTags.indexOf(tid) !== -1;
+      var check = el.querySelector('.tp-check');
+      if (sel && !check) {
+        var c = document.createElement('span');
+        c.className = 'tp-check';
+        c.textContent = '\u2713';
+        el.appendChild(c);
+      } else if (!sel && check) {
+        check.remove();
+      }
+    });
+  }
+
+  function saveMemo() {
+    var title = document.getElementById('mTitle').value.trim();
+    if (!title) { alert('请输入标题'); return; }
+    var body = {
+      id: state.editingId,
+      title: title,
+      content: document.getElementById('mContent').value,
+      authorId: parseInt(document.getElementById('mAuthor').value),
+      categoryId: document.getElementById('mCategory').value ? parseInt(document.getElementById('mCategory').value) : null,
+      stars: parseInt(document.querySelector('input[name="stars"]:checked').value),
+      tagIds: state._selectedTags || [],
+    };
+    api('/memos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(function(resp) {
+      if (resp.code === 0) {
+        closeModal('editModal');
+        loadAll().then(renderAll);
+      } else {
+        alert('保存失败: ' + resp.msg);
+      }
+    });
+  }
+
+  function deleteMemo(id) {
+    if (!confirm('确定删除此备忘录？')) return;
+    api('/memos/' + id, { method: 'DELETE' }).then(function() {
+      closeModal('detailModal');
+      loadAll().then(renderAll);
+    });
+  }
+
+  // ---- Event Bindings ----
+  document.getElementById('modalClose').addEventListener('click', function() { closeModal('editModal'); });
+  document.getElementById('editCancel').addEventListener('click', function() { closeModal('editModal'); });
+  document.getElementById('editSave').addEventListener('click', saveMemo);
+
+  // Tag popup toggle
+  document.getElementById('tagTrigger').addEventListener('click', function(e) {
+    e.stopPropagation();
+    var popup = document.getElementById('tagPopup');
+    popup.classList.toggle('open');
+  });
+  // Close popup when clicking outside
+  document.getElementById('editModal').addEventListener('click', function() {
+    document.getElementById('tagPopup').classList.remove('open');
+  });
+
+  document.getElementById('detailClose').addEventListener('click', function() { closeModal('detailModal'); });
+  document.getElementById('detailModal').addEventListener('click', function(e) { if (e.target === this) closeModal('detailModal'); });
+  document.getElementById('detailEditBtn').addEventListener('click', function() {
+    closeModal('detailModal');
+    openEdit(parseInt(this.dataset.id));
+  });
+  document.getElementById('detailDelBtn').addEventListener('click', function() {
+    deleteMemo(parseInt(this.dataset.id));
+  });
+
+  document.getElementById('fabBtn').addEventListener('click', function() { openEdit(null); });
+
+  // Manage drawer
+  document.getElementById('mgmtBtn').addEventListener('click', function() {
+    renderManage();
+    document.getElementById('mgmtDrawer').classList.add('open');
+  });
+  document.getElementById('mgmtClose').addEventListener('click', function() {
+    document.getElementById('mgmtDrawer').classList.remove('open');
+  });
+
+  // Add category
+  document.getElementById('addCatBtn').addEventListener('click', function() {
+    var name = document.getElementById('newCatName').value.trim();
+    if (!name) return;
+    var color = document.getElementById('newCatColor').value;
+    api('/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, color: color, sortOrder: 0 })
+    }).then(function() {
+      document.getElementById('newCatName').value = '';
+      loadAll().then(renderAll);
+    });
+  });
+
+  // Add tag
+  document.getElementById('addTagBtn').addEventListener('click', function() {
+    var name = document.getElementById('newTagName').value.trim();
+    if (!name) return;
+    var color = document.getElementById('newTagColor').value;
+    api('/tags', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, color: color })
+    }).then(function() {
+      document.getElementById('newTagName').value = '';
+      loadAll().then(renderAll);
+    });
+  });
+
+  // Add author
+  document.getElementById('addAuthorBtn').addEventListener('click', function() {
+    var name = document.getElementById('newAuthorName').value.trim();
+    if (!name) return;
+    var color = document.getElementById('newAuthorColor').value;
+    api('/authors', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: name, avatarColor: color })
+    }).then(function() {
+      document.getElementById('newAuthorName').value = '';
+      loadAll().then(renderAll);
+    });
+  });
+
+  // Search
+  var searchTimer = null;
+  document.getElementById('searchInput').addEventListener('input', function() {
+    if (searchTimer) clearTimeout(searchTimer);
+    var val = this.value.trim();
+    searchTimer = setTimeout(function() {
+      state.searchKeyword = val;
+      loadAll().then(renderAll);
+    }, 300);
+  });
+
+  // ---- Init ----
+  document.getElementById('masonry').innerHTML = '<div class="loading"><div class="spinner"></div><span>加载中...</span></div>';
+  loadAll().then(renderAll);
+})();
+</script>
+</body>
+</html>

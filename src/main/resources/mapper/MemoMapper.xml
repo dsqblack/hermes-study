@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.stock.mapper.MemoMapper">
+
+    <!-- ========== 分类 ========== -->
+    <resultMap id="categoryMap" type="com.example.stock.entity.MemoCategory">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="color" property="color"/>
+        <result column="sort_order" property="sortOrder"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <select id="listCategories" resultMap="categoryMap">
+        SELECT * FROM memo_category ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="getCategory" resultMap="categoryMap">
+        SELECT * FROM memo_category WHERE id = #{id}
+    </select>
+
+    <insert id="insertCategory" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO memo_category (name, color, sort_order) VALUES (#{name}, #{color}, #{sortOrder})
+    </insert>
+
+    <update id="updateCategory">
+        UPDATE memo_category SET name = #{name}, color = #{color}, sort_order = #{sortOrder} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteCategory">
+        DELETE FROM memo_category WHERE id = #{id}
+    </delete>
+
+    <!-- ========== 标签 ========== -->
+    <resultMap id="tagMap" type="com.example.stock.entity.MemoTag">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="color" property="color"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <select id="listTags" resultMap="tagMap">
+        SELECT * FROM memo_tag ORDER BY id ASC
+    </select>
+
+    <select id="getTag" resultMap="tagMap">
+        SELECT * FROM memo_tag WHERE id = #{id}
+    </select>
+
+    <insert id="insertTag" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO memo_tag (name, color) VALUES (#{name}, #{color})
+    </insert>
+
+    <update id="updateTag">
+        UPDATE memo_tag SET name = #{name}, color = #{color} WHERE id = #{id}
+    </update>
+
+    <delete id="deleteTag">
+        DELETE FROM memo_tag WHERE id = #{id}
+    </delete>
+
+    <!-- ========== 作者 ========== -->
+    <resultMap id="authorMap" type="com.example.stock.entity.MemoAuthor">
+        <id column="id" property="id"/>
+        <result column="name" property="name"/>
+        <result column="avatar_color" property="avatarColor"/>
+        <result column="create_time" property="createTime"/>
+    </resultMap>
+
+    <select id="listAuthors" resultMap="authorMap">
+        SELECT * FROM memo_author ORDER BY id ASC
+    </select>
+
+    <select id="getAuthor" resultMap="authorMap">
+        SELECT * FROM memo_author WHERE id = #{id}
+    </select>
+
+    <insert id="insertAuthor" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO memo_author (name, avatar_color) VALUES (#{name}, #{avatarColor})
+    </insert>
+
+    <delete id="deleteAuthor">
+        DELETE FROM memo_author WHERE id = #{id}
+    </delete>
+
+    <!-- ========== 备忘录 ========== -->
+    <resultMap id="memoMap" type="com.example.stock.entity.Memo">
+        <id column="id" property="id"/>
+        <result column="title" property="title"/>
+        <result column="content" property="content"/>
+        <result column="author_id" property="authorId"/>
+        <result column="category_id" property="categoryId"/>
+        <result column="stars" property="stars"/>
+        <result column="pin" property="pin"/>
+        <result column="create_time" property="createTime"/>
+        <result column="update_time" property="updateTime"/>
+    </resultMap>
+
+    <sql id="memoWhere">
+        <where>
+            <if test="categoryId != null">AND m.category_id = #{categoryId}</if>
+            <if test="authorId != null">AND m.author_id = #{authorId}</if>
+            <if test="star != null">AND m.stars = #{star}</if>
+            <if test="keyword != null and keyword != ''">
+                AND (m.title LIKE CONCAT('%', #{keyword}, '%') OR m.content LIKE CONCAT('%', #{keyword}, '%'))
+            </if>
+            <if test="tagId != null">
+                AND EXISTS (SELECT 1 FROM memo_tag_mapping t WHERE t.memo_id = m.id AND t.tag_id = #{tagId})
+            </if>
+        </where>
+    </sql>
+
+    <select id="listMemos" resultMap="memoMap">
+        SELECT m.* FROM memo m
+        <include refid="memoWhere"/>
+        ORDER BY m.pin DESC, m.update_time DESC, m.id DESC
+    </select>
+
+    <select id="getMemo" resultMap="memoMap">
+        SELECT * FROM memo WHERE id = #{id}
+    </select>
+
+    <insert id="insertMemo" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO memo (title, content, author_id, category_id, stars, pin)
+        VALUES (#{title}, #{content}, #{authorId}, #{categoryId}, #{stars}, #{pin})
+    </insert>
+
+    <update id="updateMemo">
+        UPDATE memo SET title = #{title}, content = #{content}, author_id = #{authorId},
+          category_id = #{categoryId}, stars = #{stars}, pin = #{pin}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateMemoTime">
+        UPDATE memo SET update_time = NOW() WHERE id = #{id}
+    </update>
+
+    <delete id="deleteMemo">
+        DELETE FROM memo WHERE id = #{id}
+    </delete>
+
+    <!-- ========== 标签映射 ========== -->
+    <select id="listTagsByMemo" resultMap="tagMap">
+        SELECT t.* FROM memo_tag_mapping tm
+        JOIN memo_tag t ON t.id = tm.tag_id
+        WHERE tm.memo_id = #{memoId}
+    </select>
+
+    <insert id="insertTagMapping">
+        INSERT INTO memo_tag_mapping (memo_id, tag_id) VALUES (#{memoId}, #{tagId})
+    </insert>
+
+    <delete id="deleteTagMapping">
+        DELETE FROM memo_tag_mapping WHERE memo_id = #{memoId}
+    </delete>
+
+</mapper>
