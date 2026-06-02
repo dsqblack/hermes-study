@@ -147,13 +147,6 @@ td.num-col.down { color: var(--red); }
 .news-item .news-meta .nsource { font-size: 11px; color: var(--blue); }
 .news-item .news-meta .ntime { font-size: 11px; color: var(--text-muted); }
 
-.flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 20px; }
-.flow-card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
-.flow-card .fl-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
-.flow-card .fl-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; }
-.flow-card .fl-value.inflow { color: var(--green); }
-.flow-card .fl-value.outflow { color: var(--red); }
-
 .error-state { display: none; text-align: center; background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 48px 32px; }
 .error-state.visible { display: block; }
 .error-state .err-icon { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--red); display: inline-flex; align-items: center; justify-content: center; font-size: 22px; color: var(--red); margin-bottom: 12px; }
@@ -213,10 +206,7 @@ td.num-col.down { color: var(--red); }
       <div class="section-title"><span class="dot"></span>大盘指数</div>
       <div class="indices" id="indexContainer"></div>
 
-      <div class="section-title"><span class="dot"></span>资金流向</div>
-      <div class="flow-grid" id="flowContainer"></div>
-
-      <div class="section-title"><span class="dot"></span>热门板块</div>
+    <!-- 热门板块 -->
       <div class="table-wrap">
         <table>
           <thead><tr><th>板块</th><th>代码</th><th>最新价</th><th>涨跌幅</th></tr></thead>
@@ -249,7 +239,6 @@ td.num-col.down { color: var(--red); }
     errDetail: document.getElementById('errDetail'),
     retryBtn: document.getElementById('retryBtn'),
     indexContainer: document.getElementById('indexContainer'),
-    flowContainer: document.getElementById('flowContainer'),
     sectorBody: document.getElementById('sectorBody'),
     stockBody: document.getElementById('stockBody'),
     newsContainer: document.getElementById('newsContainer'),
@@ -307,21 +296,6 @@ td.num-col.down { color: var(--red); }
     });
     DOM.indexContainer.innerHTML = idxHtml;
 
-    // Fund Flow
-    var flowHtml = '';
-    var flows = d.fundFlow || {};
-    var flowItems = [
-      { label: '主力净流入', value: fmtMoney(flows.mainForce), cls: (flows.mainForce || 0) >= 0 ? 'inflow' : 'outflow' },
-      { label: '主力净流入占比', value: flows.mainForcePct != null ? flows.mainForcePct.toFixed(2) + '%' : '-', cls: (flows.mainForcePct || 0) >= 0 ? 'inflow' : 'outflow' },
-      { label: '散户净流入', value: fmtMoney(flows.retail), cls: (flows.retail || 0) >= 0 ? 'inflow' : 'outflow' },
-      { label: '散户净流入占比', value: flows.retailPct != null ? flows.retailPct.toFixed(2) + '%' : '-', cls: (flows.retailPct || 0) >= 0 ? 'inflow' : 'outflow' },
-    ];
-    flowItems.forEach(function(f) {
-      flowHtml += '<div class="flow-card"><div class="fl-label">' + f.label + '</div>' +
-        '<div class="fl-value ' + f.cls + '">' + f.value + '</div></div>';
-    });
-    DOM.flowContainer.innerHTML = flowHtml;
-
     // Sectors
     DOM.sectorBody.innerHTML = '';
     (d.sectors || []).forEach(function(s) {
@@ -370,14 +344,6 @@ td.num-col.down { color: var(--red); }
 
   function esc(s) { if (s == null) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
   function fmtPrice(v) { if (v == null) return '-'; return v.toFixed(2); }
-  function fmtMoney(v) {
-    if (v == null) return '-';
-    var abs = Math.abs(v);
-    var prefix = v < 0 ? '-' : '';
-    if (abs >= 100000000) return prefix + (abs / 100000000).toFixed(2) + '亿';
-    if (abs >= 10000) return prefix + (abs / 10000).toFixed(2) + '万';
-    return prefix + abs.toFixed(0);
-  }
 
   DOM.collectBtn.addEventListener('click', collectData);
   DOM.retryBtn.addEventListener('click', collectData);

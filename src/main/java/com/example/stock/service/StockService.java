@@ -2,19 +2,29 @@ package com.example.stock.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
 
 @Service
 public class StockService {
+
+    private static final Logger log = LoggerFactory.getLogger(StockService.class);
+
+    private static final Charset GBK = Charset.forName("GBK");
 
     private final HttpClient http;
     private final ObjectMapper om = new ObjectMapper();
@@ -23,7 +33,6 @@ public class StockService {
         HttpClient.Builder builder = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(10));
 
-        // 读取环境变量中的代理设置 (WSL/公司网络需要)
         String httpsProxy = System.getenv("https_proxy");
         if (httpsProxy == null || httpsProxy.isEmpty()) {
             httpsProxy = System.getenv("HTTPS_PROXY");
@@ -37,8 +46,8 @@ public class StockService {
                 if (host != null) {
                     builder.proxy(ProxySelector.of(new InetSocketAddress(host, port)));
                 }
-            } catch (Exception ignored) {
-                // 解析失败就不设代理
+            } catch (Exception e) {
+                log.warn("Failed to parse proxy {}, skipping", httpsProxy, e);
             }
         }
 
@@ -50,121 +59,115 @@ public class StockService {
         try {
             result.put("indices", fetchIndices());
         } catch (Exception e) {
+            log.error("fetchIndices failed", e);
             result.put("indices", List.of());
         }
-        try {
-            result.put("fundFlow", fetchFundFlow());
-        } catch (Exception e) {
-            result.put("fundFlow", Map.of());
-        }
+        // 资金流向 — 免费接口已基本失效，返回空占位
+        result.put("fundFlow", Map.of());
         try {
             result.put("sectors", fetchSectors());
         } catch (Exception e) {
+            log.error("fetchSectors failed", e);
             result.put("sectors", List.of());
         }
         try {
             result.put("stocks", fetchHotStocks());
         } catch (Exception e) {
+            log.error("fetchHotStocks failed", e);
             result.put("stocks", List.of());
         }
         try {
             result.put("news", fetchNews());
         } catch (Exception e) {
+            log.error("fetchNews failed", e);
             result.put("news", List.of());
         }
         result.put("code", 0);
         return result;
     }
 
-    // ---- Indices ----
+    // ============ Indices (Tencent qt.gtimg.cn, GBK charset) ============
     private List<Map<String, Object>> fetchIndices() throws Exception {
-        String url = "https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2"
-                + "&fields=f2,f3,f4,f12,f14"
-                + "&secids=1.000001,0.399001,0.399006,1.000688,1.000300,1.000016,1.000905";
-        JsonNode data = getJsonArray(url);
+        String url = "https://qt.gtimg.cn/q=sh000001,sz399001,sz399006,sh000688,sh000300,sh000016,sh000905";
+        String resp = httpGetGBK(url);
         List<Map<String, Object>> list = new ArrayList<>();
-        if (data == null) return list;
-        for (JsonNode item : data) {
+        for (String line : resp.split("\n")) {
+            line = line.trim();
+            if (!line.startsWith("v_")) continue;
+            int q1 = line.indexOf('"');
+            int q2 = line.lastIndexOf('"');
+            if (q1 < 0 || q2 <= q1) continue;
+            String raw = line.substring(q1 + 1, q2);
+            String[] f = raw.split("~");
+            if (f.length < 33) continue;
             Map<String, Object> m = new LinkedHashMap<>();
-            m.put("name", getText(item, "f14"));
-            m.put("code", getText(item, "f12"));
-            m.put("price", getDouble(item, "f2"));
-            m.put("change", getDouble(item, "f4"));
-            m.put("changePct", getDouble(item, "f3"));
+            m.put("name", safeStr(f, 1));
+            m.put("code", safeStr(f, 2));
+            m.put("price", parseDouble(safeStr(f, 3)));
+            m.put("change", parseDouble(safeStr(f, 31)));
+            m.put("changePct", parseDouble(safeStr(f, 32)));
             list.add(m);
         }
         return list;
     }
 
-    // ---- Fund Flow ----
-    private Map<String, Object> fetchFundFlow() throws Exception {
-        String url = "https://push2.eastmoney.com/api/qt/ulist.np/get?fltt=2"
-                + "&fields=f168,f169,f170,f171"
-                + "&secids=1.000001";
-        JsonNode arr = getJsonArray(url);
-        Map<String, Object> m = new LinkedHashMap<>();
-        if (arr != null && arr.size() > 0) {
-            JsonNode item = arr.get(0);
-            m.put("mainForce", getDouble(item, "f168"));
-            m.put("mainForcePct", getDouble(item, "f169"));
-            m.put("retail", getDouble(item, "f170"));
-            m.put("retailPct", getDouble(item, "f171"));
-        }
-        return m;
-    }
-
-    // ---- Sectors ----
+    // ============ Sectors (Sina) ============
     private List<Map<String, Object>> fetchSectors() throws Exception {
-        String url = "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=10&po=0&np=1"
-                + "&fltt=2&invid=0&fid=f3"
-                + "&fs=m:90+t:2"
-                + "&fields=f12,f14,f2,f3,f4";
-        JsonNode arr = getClistArray(url);
         List<Map<String, Object>> list = new ArrayList<>();
-        if (arr == null) return list;
-        for (JsonNode item : arr) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("name", getText(item, "f14"));
-            m.put("code", getText(item, "f12"));
-            m.put("price", getDouble(item, "f2"));
-            m.put("change", getDouble(item, "f4"));
-            m.put("changePct", getDouble(item, "f3"));
-            list.add(m);
+        // "hy" = 行业板块 (industry), sort by changepercent descending
+        String url = "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData"
+                + "?page=1&num=15&sort=changepercent&asc=0&node=hs_s";
+        String resp = httpGet(url);
+        JsonNode arr = om.readTree(resp);
+        if (arr != null && arr.isArray()) {
+            for (JsonNode item : arr) {
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("name", getText(item, "name"));
+                m.put("code", getText(item, "code"));
+                m.put("price", getDouble(item, "trade"));
+                m.put("change", getDouble(item, "pricechange"));
+                m.put("changePct", getDouble(item, "changepercent"));
+                list.add(m);
+            }
+        } else {
+            log.warn("fetchSectors: unexpected response type: {}", arr);
         }
         return list;
     }
 
-    // ---- Hot Stocks ----
+    // ============ Hot Stocks (Sina Market_Center) ============
     private List<Map<String, Object>> fetchHotStocks() throws Exception {
-        String url = "https://push2.eastmoney.com/api/qt/clist/get?pn=1&pz=20&po=0&np=1"
-                + "&fltt=2&invid=0&fid=f3"
-                + "&fs=m:0+t:6+f:!50"
-                + "&fields=f12,f14,f2,f3,f4";
-        JsonNode arr = getClistArray(url);
+        String url = "https://vip.stock.finance.sina.com.cn/quotes_service/api/json_v2.php/Market_Center.getHQNodeData"
+                + "?page=1&num=30&sort=changepercent&asc=0&node=hs_a&symbol=&_=1";
+        String resp = httpGet(url);
+        JsonNode arr = om.readTree(resp);
         List<Map<String, Object>> list = new ArrayList<>();
-        if (arr == null) return list;
-        for (JsonNode item : arr) {
-            Map<String, Object> m = new LinkedHashMap<>();
-            m.put("name", getText(item, "f14"));
-            m.put("code", getText(item, "f12"));
-            m.put("price", getDouble(item, "f2"));
-            m.put("change", getDouble(item, "f4"));
-            m.put("changePct", getDouble(item, "f3"));
-            list.add(m);
+        if (arr != null && arr.isArray()) {
+            for (JsonNode item : arr) {
+                String code = getText(item, "code");
+                // 过滤北交所股票 (92/8开头)
+                if (code.startsWith("92") || code.startsWith("8")) continue;
+                Map<String, Object> m = new LinkedHashMap<>();
+                m.put("name", getText(item, "name"));
+                m.put("code", code);
+                m.put("price", getDouble(item, "trade"));
+                m.put("change", getDouble(item, "pricechange"));
+                m.put("changePct", getDouble(item, "changepercent"));
+                list.add(m);
+                if (list.size() >= 15) break;
+            }
+        } else {
+            log.warn("fetchHotStocks: unexpected response type: {}", arr);
         }
         return list;
     }
-    // ---- News (from Sina Finance) ----
+
+    // ============ News (Sina Feed) ============
     private List<Map<String, Object>> fetchNews() throws Exception {
         String url = "https://feed.mix.sina.com.cn/api/roll/get"
                 + "?pageid=153&lid=2509&k=&num=10&page=1";
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(8))
-                .header("User-Agent", "Mozilla/5.0")
-                .GET().build();
-        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        JsonNode root = om.readTree(resp.body());
+        String resp = httpGet(url);
+        JsonNode root = om.readTree(resp);
         JsonNode arts = root.at("/result/data");
         List<Map<String, Object>> list = new ArrayList<>();
         if (arts != null && arts.isArray()) {
@@ -172,48 +175,57 @@ public class StockService {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("title", getText(item, "title"));
                 m.put("source", getText(item, "media_name"));
-                // ctime is unix timestamp in seconds
                 long ctime = (long) getDouble(item, "ctime");
                 if (ctime > 0) {
-                    m.put("time", new java.text.SimpleDateFormat("MM-dd HH:mm")
-                            .format(new java.util.Date(ctime * 1000)));
+                    m.put("time", new SimpleDateFormat("MM-dd HH:mm")
+                            .format(new Date(ctime * 1000)));
                 } else {
                     m.put("time", "");
                 }
                 m.put("url", getText(item, "url"));
                 list.add(m);
             }
+        } else {
+            log.warn("fetchNews: /result/data is null or not array");
         }
         return list;
     }
 
-    // ---- Helpers ----
-    private JsonNode getJsonArray(String url) throws Exception {
+    // ============ HTTP Helpers ============
+
+    /** 通用HTTP GET，默认UTF-8解码（适用于新浪JSON接口） */
+    private String httpGet(String url) throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(8))
-                .header("User-Agent", "Mozilla/5.0")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                 .GET().build();
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        JsonNode root = om.readTree(resp.body());
-        JsonNode data = root.get("data");
-        if (data == null) return null;
-        JsonNode diff = data.get("diff");
-        return (diff != null && diff.isArray()) ? diff : null;
+        return resp.body();
     }
 
-    private JsonNode getClistArray(String url) throws Exception {
+    /** 专门用于腾讯 qt.gtimg.cn 接口（GBK编码） */
+    private String httpGetGBK(String url) throws Exception {
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(8))
-                .header("User-Agent", "Mozilla/5.0")
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
                 .GET().build();
-        HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        JsonNode root = om.readTree(resp.body());
-        JsonNode data = root.get("data");
-        if (data == null) return null;
-        JsonNode diff = data.get("diff");
-        return (diff != null && diff.isArray()) ? diff : null;
+        HttpResponse<byte[]> resp = http.send(req, HttpResponse.BodyHandlers.ofByteArray());
+        return new String(resp.body(), GBK);
+    }
+
+    private String safeStr(String[] arr, int idx) {
+        return idx < arr.length ? (arr[idx] == null ? "" : arr[idx]) : "";
+    }
+
+    private double parseDouble(String s) {
+        if (s == null || s.isEmpty()) return 0.0;
+        try {
+            return Double.parseDouble(s);
+        } catch (NumberFormatException e) {
+            return 0.0;
+        }
     }
 
     private String getText(JsonNode node, String field) {
