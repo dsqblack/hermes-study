@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -14,10 +16,34 @@ import java.util.*;
 @Service
 public class StockService {
 
-    private final HttpClient http = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
+    private final HttpClient http;
     private final ObjectMapper om = new ObjectMapper();
+
+    public StockService() {
+        HttpClient.Builder builder = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(10));
+
+        // 读取环境变量中的代理设置 (WSL/公司网络需要)
+        String httpsProxy = System.getenv("https_proxy");
+        if (httpsProxy == null || httpsProxy.isEmpty()) {
+            httpsProxy = System.getenv("HTTPS_PROXY");
+        }
+        if (httpsProxy != null && !httpsProxy.isEmpty()) {
+            try {
+                URI proxyUri = URI.create(httpsProxy);
+                String host = proxyUri.getHost();
+                int port = proxyUri.getPort();
+                if (port <= 0) port = 7890;
+                if (host != null) {
+                    builder.proxy(ProxySelector.of(new InetSocketAddress(host, port)));
+                }
+            } catch (Exception ignored) {
+                // 解析失败就不设代理
+            }
+        }
+
+        this.http = builder.build();
+    }
 
     public Map<String, Object> fetchHotData() {
         Map<String, Object> result = new LinkedHashMap<>();
@@ -128,36 +154,32 @@ public class StockService {
         }
         return list;
     }
-
-    // ---- News ----
+    // ---- News (from Sina Finance) ----
     private List<Map<String, Object>> fetchNews() throws Exception {
-        String url = "https://search-api-web.eastmoney.com/search/jsonp"
-                + "?param=%7B%22uid%22%3A%22%22%2C%22keyword%22%3A%22%E8%B4%A2%E7%BB%8F%22%2C%22type%22%3A%5B%22cmsArticleWebOld%22%5D%2C%22client%22%3A%22web%22%2C%22clientType%22%3A%22web%22%2C%22clientVersion%22%3A%22curr%22%2C%22param%22%3A%7B%22cmsArticleWebOld%22%3A%7B%22searchScope%22%3A%22default%22%2C%22sort%22%3A%22default%22%2C%22pageIndex%22%3A1%2C%22pageSize%22%3A10%2C%22preTag%22%3A%22%22%2C%22postTag%22%3A%22%22%7D%7D%7D";
+        String url = "https://feed.mix.sina.com.cn/api/roll/get"
+                + "?pageid=153&lid=2509&k=&num=10&page=1";
         HttpRequest req = HttpRequest.newBuilder()
                 .uri(URI.create(url))
                 .timeout(Duration.ofSeconds(8))
                 .header("User-Agent", "Mozilla/5.0")
-                .header("Referer", "https://www.eastmoney.com/")
                 .GET().build();
         HttpResponse<String> resp = http.send(req, HttpResponse.BodyHandlers.ofString());
-        String body = resp.body();
-
-        // Strip JSONP padding: jQuery({...})
-        int start = body.indexOf('(');
-        int end = body.lastIndexOf(')');
-        if (start >= 0 && end > start) {
-            body = body.substring(start + 1, end);
-        }
-
-        JsonNode root = om.readTree(body);
-        JsonNode articles = root.at("/result/cmsArticleWebOld");
+        JsonNode root = om.readTree(resp.body());
+        JsonNode arts = root.at("/result/data");
         List<Map<String, Object>> list = new ArrayList<>();
-        if (articles != null && articles.isArray()) {
-            for (JsonNode item : articles) {
+        if (arts != null && arts.isArray()) {
+            for (JsonNode item : arts) {
                 Map<String, Object> m = new LinkedHashMap<>();
                 m.put("title", getText(item, "title"));
-                m.put("source", getText(item, "mediaName"));
-                m.put("time", getText(item, "date"));
+                m.put("source", getText(item, "media_name"));
+                // ctime is unix timestamp in seconds
+                long ctime = (long) getDouble(item, "ctime");
+                if (ctime > 0) {
+                    m.put("time", new java.text.SimpleDateFormat("MM-dd HH:mm")
+                            .format(new java.util.Date(ctime * 1000)));
+                } else {
+                    m.put("time", "");
+                }
                 m.put("url", getText(item, "url"));
                 list.add(m);
             }
