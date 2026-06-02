@@ -9,7 +9,6 @@ import org.springframework.stereotype.Service;
 import java.net.InetSocketAddress;
 import java.net.ProxySelector;
 import java.net.URI;
-import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -18,6 +17,8 @@ import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 public class StockService {
@@ -162,31 +163,32 @@ public class StockService {
         return list;
     }
 
-    // ============ News (Sina Feed) ============
+    // ============ News (scraped from Sina Finance homepage) ============
+    private static final Pattern NEWS_PATTERN = Pattern.compile(
+            "target=\"_blank\" href=\"(https?://finance\\.sina\\.com\\.cn/[^\"]+)\">([^<]{8,})");
+
     private List<Map<String, Object>> fetchNews() throws Exception {
-        String url = "https://feed.mix.sina.com.cn/api/roll/get"
-                + "?pageid=153&lid=2509&k=&num=10&page=1";
-        String resp = httpGet(url);
-        JsonNode root = om.readTree(resp);
-        JsonNode arts = root.at("/result/data");
+        // Sina feed API (feed.mix.sina.com.cn) is blocked on some servers,
+        // fallback to scraping finance.sina.com.cn homepage
+        String url = "https://finance.sina.com.cn/";
+        String html = httpGet(url);
+        Matcher m = NEWS_PATTERN.matcher(html);
         List<Map<String, Object>> list = new ArrayList<>();
-        if (arts != null && arts.isArray()) {
-            for (JsonNode item : arts) {
-                Map<String, Object> m = new LinkedHashMap<>();
-                m.put("title", getText(item, "title"));
-                m.put("source", getText(item, "media_name"));
-                long ctime = (long) getDouble(item, "ctime");
-                if (ctime > 0) {
-                    m.put("time", new SimpleDateFormat("MM-dd HH:mm")
-                            .format(new Date(ctime * 1000)));
-                } else {
-                    m.put("time", "");
-                }
-                m.put("url", getText(item, "url"));
-                list.add(m);
-            }
-        } else {
-            log.warn("fetchNews: /result/data is null or not array");
+        Set<String> seenUrls = new HashSet<>();
+        while (m.find() && list.size() < 10) {
+            String newsUrl = m.group(1);
+            String title = m.group(2).trim();
+            if (title.isEmpty() || seenUrls.contains(newsUrl)) continue;
+            seenUrls.add(newsUrl);
+            Map<String, Object> item = new LinkedHashMap<>();
+            item.put("title", title);
+            item.put("source", "新浪财经");
+            item.put("time", new SimpleDateFormat("MM-dd HH:mm").format(new Date()));
+            item.put("url", newsUrl);
+            list.add(item);
+        }
+        if (list.isEmpty()) {
+            log.warn("fetchNews: no news items found on Sina finance page");
         }
         return list;
     }
