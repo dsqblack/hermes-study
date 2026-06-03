@@ -713,6 +713,7 @@ body {
   // === State ===
   var state = {
     memos: [],
+    allMemos: [],
     categories: [],
     tags: [],
     authors: [],
@@ -735,6 +736,7 @@ body {
   function loadAll() {
     return Promise.all([
       api('/memos' + buildQuery()).then(function(d) { state.memos = d; }),
+      api('/memos').then(function(d) { state.allMemos = d; }),
       api('/categories').then(function(d) { state.categories = d; }),
       api('/tags').then(function(d) { state.tags = d; }),
       api('/authors').then(function(d) { state.authors = d; }),
@@ -768,7 +770,7 @@ body {
     var allItem = document.querySelector('#sidebar .sidebar-item[data-id=""]');
     if (allItem) {
       allItem.className = 'sidebar-item' + (state.activeCategory === null && state.activeTag === null ? ' active' : '');
-      document.getElementById('totalCount').textContent = state.memos.length;
+      document.getElementById('totalCount').textContent = state.allMemos.length;
     }
 
     // Categories
@@ -776,7 +778,7 @@ body {
     var catHtml = '';
     state.categories.forEach(function(c) {
       var active = state.activeCategory === c.id && state.activeTag === null;
-      var count = state.memos.filter(function(m) { return m.categoryId === c.id; }).length;
+      var count = state.allMemos.filter(function(m) { return m.categoryId === c.id; }).length;
       catHtml += '<button class="sidebar-item' + (active ? ' active' : '') + '" data-type="cat" data-id="' + c.id + '">' +
         '<span class="sdot" style="background:' + c.color + '"></span>' +
         escapeHtml(c.name) +
