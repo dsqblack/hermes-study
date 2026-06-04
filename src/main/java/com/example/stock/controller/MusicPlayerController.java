@@ -19,7 +19,7 @@ import java.io.File;
 @RequestMapping("/api/music-player")
 public class MusicPlayerController {
 
-    @Value("${music-player.exe-path:/opt/hermes-study/downloads/Music-player.exe}")
+    @Value("${music-player.exe-path:/opt/stock-collector/downloads/Music-player.exe}")
     private String exePath;
 
     @GetMapping("/download")
@@ -27,7 +27,6 @@ public class MusicPlayerController {
         File file = new File(exePath);
 
         if (!file.exists()) {
-            // 如果配置路径不存在，尝试从 classpath 同级目录查找
             File fallback = new File("downloads/Music-player.exe");
             if (fallback.exists()) {
                 file = fallback;
