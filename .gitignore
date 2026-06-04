@@ -13,3 +13,6 @@ D:/*
 logs/
 *.log
 
+# Large binary / design artifacts
+downloads/
+music-player/
