@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Music Player — 桌面音乐播放器</title>
+<style>
+  /* ===== Design Tokens ===== */
+  :root {
+    --bg:        #0d0f14;
+    --bg-card:   #13161e;
+    --bg-glass:  rgba(255,255,255,0.04);
+    --border:    rgba(255,255,255,0.08);
+    --border-md: rgba(255,255,255,0.14);
+    --green:     #1db954;
+    --green-dim: rgba(29,185,84,0.12);
+    --green-glow:rgba(29,185,84,0.25);
+    --text:      #e8eaf0;
+    --text-2:    #9ca3af;
+    --text-3:    #6b7280;
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 14px;
+    --radius-xl: 20px;
+    --font: 'Inter', 'PingFang SC', system-ui, sans-serif;
+    --mono: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a { color: var(--green); text-decoration: none; }
+  a:hover { opacity: 0.8; }
+
+  /* ===== NAV ===== */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 40px;
+    height: 60px;
+    background: rgba(13,15,20,0.88);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 600;
+    font-size: 15px;
+    letter-spacing: 0.04em;
+    color: var(--text);
+  }
+  .nav-logo .eq-icon {
+    display: flex; align-items: flex-end; gap: 2px; height: 18px;
+  }
+  .nav-logo .eq-icon span {
+    width: 3px;
+    background: var(--green);
+    border-radius: 2px;
+    animation: eq 1.2s ease-in-out infinite alternate;
+  }
+  .nav-logo .eq-icon span:nth-child(1){ height: 8px; animation-delay: 0s; }
+  .nav-logo .eq-icon span:nth-child(2){ height: 14px;animation-delay:.15s; }
+  .nav-logo .eq-icon span:nth-child(3){ height: 10px;animation-delay:.3s; }
+  .nav-logo .eq-icon span:nth-child(4){ height: 16px;animation-delay:.45s; }
+  .nav-logo .eq-icon span:nth-child(5){ height: 6px; animation-delay:.6s; }
+  @keyframes eq {
+    from { transform: scaleY(0.4); }
+    to   { transform: scaleY(1); }
+  }
+  .nav-links {
+    display: flex; gap: 28px; list-style: none;
+  }
+  .nav-links a { color: var(--text-2); font-size: 14px; transition: color .2s; }
+  .nav-links a:hover { color: var(--text); }
+  .nav-cta {
+    padding: 7px 18px;
+    background: var(--green);
+    color: #000;
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 13px;
+    transition: opacity .2s, transform .1s;
+  }
+  .nav-cta:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  /* ===== SECTIONS ===== */
+  section { padding: 80px 40px; max-width: 1100px; margin: 0 auto; }
+  .section-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+  h2.section-title {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+  p.section-sub {
+    font-size: 15px;
+    color: var(--text-2);
+    max-width: 520px;
+    line-height: 1.7;
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    max-width: 100%;
+    padding: 100px 40px 80px;
+    background: radial-gradient(ellipse 80% 60% at 50% -20%, rgba(29,185,84,0.08) 0%, transparent 60%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 28px;
+  }
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 14px;
+    border: 1px solid rgba(29,185,84,0.35);
+    border-radius: 99px;
+    background: var(--green-dim);
+    font-size: 12px;
+    color: var(--green);
+    font-weight: 500;
+  }
+  .hero h1 {
+    font-size: clamp(36px, 6vw, 62px);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .hero h1 em {
+    font-style: normal;
+    color: var(--green);
+  }
+  .hero p {
+    font-size: 17px;
+    color: var(--text-2);
+    max-width: 560px;
+    line-height: 1.75;
+  }
+  .hero-btns {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 28px;
+    background: var(--green);
+    color: #000;
+    border-radius: var(--radius-md);
+    font-weight: 700;
+    font-size: 14px;
+    transition: opacity .2s, transform .15s;
+  }
+  .btn-primary:hover { opacity: 0.88; transform: translateY(-2px); color: #000; }
+  .btn-secondary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 28px;
+    background: var(--bg-glass);
+    color: var(--text);
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius-md);
+    font-weight: 600;
+    font-size: 14px;
+    transition: background .2s, transform .15s;
+  }
+  .btn-secondary:hover { background: rgba(255,255,255,0.08); transform: translateY(-2px); color: var(--text); }
+
+  /* ===== APP PREVIEW ===== */
+  .preview-wrap {
+    margin-top: 20px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+  .preview-glow {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 500px;
+    height: 260px;
+    background: radial-gradient(ellipse, rgba(29,185,84,0.18) 0%, transparent 70%);
+    pointer-events: none;
+    filter: blur(30px);
+  }
+  .preview-frame {
+    position: relative;
+    width: 100%;
+    max-width: 820px;
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--border-md);
+    overflow: hidden;
+    background: #1a1f2b;
+  }
+  .preview-bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 16px 10px;
+    background: rgba(0,0,0,0.35);
+    border-bottom: 1px solid var(--border);
+  }
+  .preview-bar .dot {
+    width: 11px; height: 11px; border-radius: 50%;
+  }
+  .preview-bar .dot-red   { background: #ff5f57; }
+  .preview-bar .dot-amber { background: #febc2e; }
+  .preview-bar .dot-green { background: #28c840; }
+  .preview-bar .title {
+    flex: 1; text-align: center;
+    font-size: 12px;
+    font-family: var(--mono);
+    color: var(--text-3);
+    letter-spacing: 0.06em;
+  }
+  /* ---- 模拟播放器 UI ---- */
+  .mock-player {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 340px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+  .mock-left {
+    background: #111318;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border-right: 1px solid var(--border);
+  }
+  .mock-album {
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: var(--radius-md);
+    background: #1a1d27;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+  .mock-album canvas { position: absolute; inset: 0; }
+  .mock-album-text {
+    position: relative;
+    text-align: center;
+    z-index: 1;
+  }
+  .mock-album-text .song { color: var(--text); font-size: 12px; font-weight: 600; margin-bottom: 4px; font-family: var(--font); }
+  .mock-album-text .artist { color: var(--text-2); font-size: 11px; font-family: var(--font); }
+  .progress-bar {
+    width: 100%;
+    height: 3px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    position: relative;
+  }
+  .progress-fill {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 38%;
+    background: var(--green);
+    border-radius: 2px;
+  }
+  .mock-controls {
+    display: flex; align-items: center; justify-content: center; gap: 12px;
+  }
+  .ctrl-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 11px;
+    color: var(--text-2);
+  }
+  .ctrl-btn.play {
+    width: 38px; height: 38px;
+    background: var(--green);
+    color: #000;
+    font-size: 14px;
+  }
+  .vol-row { display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--text-3); }
+  .vol-track { flex: 1; height: 3px; background: rgba(255,255,255,0.1); border-radius: 2px; position: relative; }
+  .vol-fill { position: absolute; left: 0; top: 0; bottom: 0; width: 55%; background: var(--text-3); border-radius: 2px; }
+  .mock-right {
+    background: #0f1218;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .mock-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .mock-tab {
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    color: var(--text-3);
+    cursor: pointer;
+  }
+  .mock-tab.active {
+    background: var(--green-dim);
+    color: var(--green);
+  }
+  .mock-track {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 6px;
+    border-radius: var(--radius-sm);
+    transition: background .15s;
+  }
+  .mock-track:hover { background: rgba(255,255,255,0.04); }
+  .mock-track.playing { background: var(--green-dim); }
+  .mock-track-num { width: 20px; text-align: right; color: var(--text-3); font-size: 10px; }
+  .mock-track.playing .mock-track-num { color: var(--green); }
+  .mock-track-info { flex: 1; }
+  .mock-track-name { color: var(--text); font-size: 11px; font-family: var(--font); }
+  .mock-track.playing .mock-track-name { color: var(--green); }
+  .mock-track-artist { color: var(--text-3); font-size: 10px; font-family: var(--font); }
+  .mock-track-tag {
+    font-size: 9px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    background: var(--green-dim);
+    color: var(--green);
+  }
+  .mock-track-actions { display: flex; gap: 6px; }
+  .mock-track-actions span { color: var(--text-3); font-size: 12px; cursor: pointer; }
+  .mock-track-actions span:hover { color: var(--green); }
+
+  /* ===== STATS ===== */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin: 48px 0 0;
+  }
+  .stat-item {
+    background: var(--bg-card);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .stat-num {
+    font-size: 36px;
+    font-weight: 800;
+    color: var(--green);
+    letter-spacing: -0.02em;
+    line-height: 1;
+    font-family: var(--mono);
+  }
+  .stat-label { font-size: 13px; color: var(--text-2); }
+
+  /* ===== FEATURES ===== */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-top: 48px;
+  }
+  .feat-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    transition: border-color .2s, transform .2s;
+  }
+  .feat-card:hover {
+    border-color: rgba(29,185,84,0.35);
+    transform: translateY(-3px);
+  }
+  .feat-icon {
+    width: 40px; height: 40px;
+    border-radius: var(--radius-md);
+    background: var(--green-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    margin-bottom: 14px;
+  }
+  .feat-title {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+  }
+  .feat-desc {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.65;
+  }
+
+  /* ===== FORMAT SUPPORT ===== */
+  .formats-section { padding-top: 0; }
+  .formats-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 32px;
+  }
+  .fmt-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-md);
+    background: var(--bg-card);
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--text);
+  }
+  .fmt-chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .fmt-chip.special { border-color: rgba(29,185,84,0.4); background: var(--green-dim); }
+  .fmt-chip.special .dot { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .fmt-note {
+    margin-top: 16px;
+    padding: 14px 18px;
+    border-radius: var(--radius-md);
+    background: var(--green-dim);
+    border: 1px solid rgba(29,185,84,0.2);
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.65;
+  }
+  .fmt-note strong { color: var(--green); }
+
+  /* ===== RECOMMEND ===== */
+  .recommend-section { background: var(--bg-card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 80px 0; }
+  .recommend-inner { max-width: 1100px; margin: 0 auto; padding: 0 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+  .formula-box {
+    background: #0d0f14;
+    border: 1px solid var(--border-md);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    font-family: var(--mono);
+    font-size: 13px;
+  }
+  .formula-box .comment { color: var(--text-3); font-size: 12px; }
+  .formula-box .key { color: var(--green); }
+  .formula-box .val { color: #79b8ff; }
+  .formula-box .op { color: var(--text-2); }
+  .formula-line { padding: 3px 0; }
+  .formula-divider { border: none; border-top: 1px solid var(--border); margin: 12px 0; }
+  .rule-list { list-style: none; margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+  .rule-list li {
+    display: flex; align-items: flex-start; gap: 10px; font-size: 14px; color: var(--text-2);
+  }
+  .rule-list .badge {
+    flex-shrink: 0;
+    width: 20px; height: 20px;
+    background: var(--green-dim);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--green);
+    margin-top: 2px;
+  }
+
+  /* ===== TECH STACK ===== */
+  .tech-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-top: 40px;
+  }
+  .tech-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 18px 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+  }
+  .tech-bullet {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+  .tech-name { font-size: 14px; font-weight: 600; color: var(--text); font-family: var(--mono); }
+  .tech-role { font-size: 12px; color: var(--text-2); margin-top: 3px; }
+
+  /* ===== CHANGELOG ===== */
+  .changelog-section { padding-bottom: 60px; }
+  .changelog-list { margin-top: 40px; display: flex; flex-direction: column; gap: 0; position: relative; }
+  .changelog-list::before {
+    content: '';
+    position: absolute;
+    left: 62px;
+    top: 0; bottom: 0;
+    width: 1px;
+    background: var(--border);
+  }
+  .changelog-item {
+    display: flex;
+    gap: 24px;
+    padding: 16px 0;
+    align-items: flex-start;
+  }
+  .changelog-ver {
+    width: 56px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--green);
+    text-align: right;
+    padding-top: 2px;
+  }
+  .changelog-dot {
+    width: 13px; height: 13px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--border-md);
+    flex-shrink: 0;
+    margin-top: 3px;
+    position: relative;
+    z-index: 1;
+  }
+  .changelog-item.latest .changelog-dot {
+    border-color: var(--green);
+    background: var(--green);
+  }
+  .changelog-body { flex: 1; }
+  .changelog-date { font-size: 11px; color: var(--text-3); margin-bottom: 4px; }
+  .changelog-desc { font-size: 13px; color: var(--text-2); line-height: 1.65; }
+  .changelog-desc strong { color: var(--text); }
+
+  /* ===== DOWNLOAD CTA ===== */
+  .download-cta {
+    background: var(--bg-card);
+    border-top: 1px solid var(--border);
+    padding: 80px 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 24px;
+  }
+  .download-cta h2 { font-size: 36px; font-weight: 800; color: var(--text); }
+  .download-cta p  { font-size: 15px; color: var(--text-2); max-width: 480px; line-height: 1.7; }
+  .download-meta {
+    display: flex; align-items: center; gap: 16px;
+    font-size: 12px; color: var(--text-3);
+  }
+  .download-meta .sep { opacity: 0.3; }
+
+  /* ===== FOOTER ===== */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 28px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-3);
+    max-width: 100%;
+  }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .nav-links { display: none; }
+    section { padding: 60px 24px; }
+    .features-grid { grid-template-columns: 1fr 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .tech-grid { grid-template-columns: 1fr 1fr; }
+    .recommend-inner { grid-template-columns: 1fr; }
+    .mock-player { grid-template-columns: 1fr; }
+    .mock-right { display: none; }
+    .changelog-list::before { left: 58px; }
+  }
+  @media (max-width: 600px) {
+    .features-grid { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .tech-grid { grid-template-columns: 1fr; }
+    .hero h1 { font-size: 32px; }
+    footer { flex-direction: column; gap: 8px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== NAV ===== -->
+<nav class="nav">
+  <div style="display:flex;align-items:center;gap:16px">
+    <div class="nav-logo">
+      <div class="eq-icon">
+        <span></span><span></span><span></span><span></span><span></span>
+      </div>
+      Cyber Music
+    </div>
+    <a href="/" style="display:flex;align-items:center;gap:6px;color:var(--text-2);font-size:13px;transition:color .2s" title="返回 Hermes Study 主页">← Hermes Study</a>
+  </div>
+  <ul class="nav-links">
+    <li><a href="#features">功能</a></li>
+    <li><a href="#formats">格式支持</a></li>
+    <li><a href="#recommend">推荐引擎</a></li>
+    <li><a href="#changelog">更新日志</a></li>
+  </ul>
+  <a href="/api/music-player/download" class="nav-cta">↓ 下载 .exe</a>
+</nav>
+
+<!-- ===== HERO ===== -->
+<div class="hero">
+  <div class="hero-badge">
+    <span style="width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block"></span>
+    v2.4 · 最新版本
+  </div>
+  <h1>赛博风桌面<em>音乐播放器</em></h1>
+  <p>Spotify 深色风格 · 粒子动画 · 智能推荐 · 双击即用<br>无需任何依赖，完整支持 .mflac / .ncm 加密格式</p>
+  <div class="hero-btns">
+    <a href="/api/music-player/download" class="btn-primary">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12l-5-5h3V2h4v5h3z"/><path d="M14 13H2v1.5h12z"/></svg>
+      免费下载 (45 MB)
+    </a>
+    <a href="#features" class="btn-secondary">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M6.5 5.5l4 2.5-4 2.5z"/></svg>
+      查看功能
+    </a>
+  </div>
+
+  <!-- 模拟播放器截图 -->
+  <div class="preview-wrap">
+    <div class="preview-glow"></div>
+    <div class="preview-frame">
+      <div class="preview-bar">
+        <div class="dot dot-red"></div>
+        <div class="dot dot-amber"></div>
+        <div class="dot dot-green"></div>
+        <div class="title">◉ CYBER MUSIC &nbsp;&nbsp;&nbsp; DISCOVER &nbsp; LIBRARY &nbsp;&nbsp; 14:32 &nbsp; ▶5 ♥2 ⏭1</div>
+      </div>
+      <div class="mock-player">
+        <!-- 左栏：播放器 -->
+        <div class="mock-left">
+          <div class="mock-album">
+            <canvas id="particleCanvas" width="220" height="220"></canvas>
+            <div class="mock-album-text">
+              <div class="song">江湖流</div>
+              <div class="artist">GAI周延</div>
+            </div>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="mock-controls">
+            <div class="ctrl-btn">⏮</div>
+            <div class="ctrl-btn">⤨</div>
+            <div class="ctrl-btn play" id="playBtn">▶</div>
+            <div class="ctrl-btn">⏭</div>
+            <div class="ctrl-btn">⏸</div>
+          </div>
+          <div class="vol-row">
+            <span>VOL</span>
+            <div class="vol-track"><div class="vol-fill"></div></div>
+            <span>55</span>
+          </div>
+        </div>
+        <!-- 右栏：曲目列表 -->
+        <div class="mock-right">
+          <div class="mock-tabs">
+            <div class="mock-tab active">今日推荐</div>
+            <div class="mock-tab">探索</div>
+            <div class="mock-tab">ALL</div>
+          </div>
+          <div class="mock-track playing">
+            <div class="mock-track-num">01</div>
+            <div class="mock-track-info">
+              <div class="mock-track-name">江湖流 <span class="mock-track-tag">喜爱艺人</span></div>
+              <div class="mock-track-artist">C-BLOCK / GAI周延</div>
+            </div>
+            <div class="mock-track-actions"><span>♥</span><span>⏭</span></div>
+          </div>
+          <div class="mock-track">
+            <div class="mock-track-num">02</div>
+            <div class="mock-track-info">
+              <div class="mock-track-name">工厂</div>
+              <div class="mock-track-artist">河南说唱之神</div>
+            </div>
+            <div class="mock-track-actions"><span>♥</span><span>⏭</span></div>
+          </div>
+          <div class="mock-track">
+            <div class="mock-track-num">03</div>
+            <div class="mock-track-info">
+              <div class="mock-track-name">试试看 <span class="mock-track-tag">新鲜</span></div>
+              <div class="mock-track-artist">GALI</div>
+            </div>
+            <div class="mock-track-actions"><span>♥</span><span>⏭</span></div>
+          </div>
+          <div class="mock-track">
+            <div class="mock-track-num">04</div>
+            <div class="mock-track-info">
+              <div class="mock-track-name">一人我饮酒醉</div>
+              <div class="mock-track-artist">曲婉婷</div>
+            </div>
+            <div class="mock-track-actions"><span>♥</span><span>⏭</span></div>
+          </div>
+          <div class="mock-track">
+            <div class="mock-track-num">05</div>
+            <div class="mock-track-info">
+              <div class="mock-track-name">默</div>
+              <div class="mock-track-artist">张碧晨</div>
+            </div>
+            <div class="mock-track-actions"><span>♥</span><span>⏭</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 数据统计 -->
+  <div class="stats-grid" style="max-width:820px;width:100%">
+    <div class="stat-item">
+      <div class="stat-num">7+</div>
+      <div class="stat-label">支持音频格式</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">45MB</div>
+      <div class="stat-label">单文件体积</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">0</div>
+      <div class="stat-label">依赖项，双击即用</div>
+    </div>
+    <div class="stat-item">
+      <div class="stat-num">30fps</div>
+      <div class="stat-label">粒子动画帧率</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FEATURES ===== -->
+<section id="features">
+  <div class="section-label">功能亮点</div>
+  <h2 class="section-title">专为本地音乐打造的<br>全能播放体验</h2>
+  <p class="section-sub">从双击启动到粒子动画，每一个细节都经过精心设计，让本地音乐库焕然一新。</p>
+  <div class="features-grid">
+    <div class="feat-card">
+      <div class="feat-icon">⟳</div>
+      <div class="feat-title">智能推荐引擎</div>
+      <div class="feat-desc">基于喜欢/跳过行为建立偏好模型，每日推荐结合新鲜度与疲劳扣分，同艺人最多2首保证多样性。</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">◎</div>
+      <div class="feat-title">彩色粒子动画</div>
+      <div class="feat-desc">封面区域在播放时显示粒子爆炸动画，颜色随机从绿/青/紫/粉循环，30fps 节拍律动。</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⚡</div>
+      <div class="feat-title">MFLAC / NCM 解密</div>
+      <div class="feat-desc">自动解密 QQ音乐 .mflac 和网易云 .ncm 加密文件，内存播放不落盘，关闭自动清理。</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">▤</div>
+      <div class="feat-title">三种浏览模式</div>
+      <div class="feat-desc">今日推荐 · 探索（不常听的歌）· ALL（全库），各模式独立维护上下首播放序列。</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⊞</div>
+      <div class="feat-title">自适应字体缩放</div>
+      <div class="feat-desc">窗口大小改变时 Header / 歌名 / 歌手 / 列表全部随之缩放，原地缩放不重建 Widget。</div>
+    </div>
+    <div class="feat-card">
+      <div class="feat-icon">⊕</div>
+      <div class="feat-title">灵活的音乐目录</div>
+      <div class="feat-desc">📁 按钮随时切换曲库目录，启动自动扫描，刷新时清理已删除文件，ALL 去重防止同歌出现两次。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== FORMAT SUPPORT ===== -->
+<section id="formats" class="formats-section">
+  <div class="section-label">格式支持</div>
+  <h2 class="section-title">7 种格式，全部支持</h2>
+  <p class="section-sub">包含主流无损格式与加密格式，OGG/MFLAC/NCM 开箱即用，无需额外工具。</p>
+  <div class="formats-grid">
+    <div class="fmt-chip"><div class="dot"></div>.mp3</div>
+    <div class="fmt-chip"><div class="dot"></div>.flac</div>
+    <div class="fmt-chip"><div class="dot"></div>.ogg</div>
+    <div class="fmt-chip"><div class="dot"></div>.wav</div>
+    <div class="fmt-chip"><div class="dot"></div>.m4a</div>
+    <div class="fmt-chip"><div class="dot"></div>.wma</div>
+    <div class="fmt-chip special"><div class="dot"></div>.mflac <span style="font-size:10px;color:var(--text-3);margin-left:4px">QQ音乐加密</span></div>
+    <div class="fmt-chip special"><div class="dot"></div>.ncm <span style="font-size:10px;color:var(--text-3);margin-left:4px">网易云加密</span></div>
+  </div>
+  <div class="fmt-note">
+    <strong>.mflac</strong> 采用 QMCv2 XOR 算法解密；<strong>.ncm</strong> 采用移植自 ncmdump 的 AES + RC4 纯 Python 实现。解密后文件仅在内存中存在，关闭播放器自动清理，不保存到磁盘。
+  </div>
+</section>
+
+<!-- ===== RECOMMEND ENGINE ===== -->
+<div class="recommend-section" id="recommend">
+  <div class="recommend-inner">
+    <div>
+      <div class="section-label">推荐引擎</div>
+      <h2 class="section-title" style="font-size:26px">了解你的<br>音乐品味</h2>
+      <p class="section-sub" style="margin-bottom:0">每一次喜欢或跳过都在训练属于你的偏好模型，随着使用时间增长，推荐越来越准。</p>
+      <ul class="rule-list">
+        <li><div class="badge">♥</div><div>喜欢一首歌，该艺人权重 +1，同艺人所有歌曲得分上涨</div></li>
+        <li><div class="badge">⏭</div><div>跳过一首歌，该艺人权重 -0.5，避免反复推同类歌曲</div></li>
+        <li><div class="badge">✦</div><div>一周内未听过的歌自动 +0.3 新鲜度加分</div></li>
+        <li><div class="badge">⊗</div><div>一周内每播一次扣 0.3 疲劳分，防止同歌反复出现</div></li>
+      </ul>
+    </div>
+    <div class="formula-box">
+      <div class="formula-line comment"># 推荐得分公式</div>
+      <div class="formula-line">&nbsp;</div>
+      <div class="formula-line">
+        <span class="key">score</span>
+        <span class="op"> = </span>
+        <span class="val">tag_score</span>
+        <span class="op"> + </span>
+        <span class="val">fresh_score</span>
+        <span class="op"> - </span>
+        <span class="val">fatigue</span>
+      </div>
+      <hr class="formula-divider">
+      <div class="formula-line comment"># 标签匹配分（你喜欢的艺人权重之和）</div>
+      <div class="formula-line"><span class="key">tag_score</span><span class="op">:</span>  <span class="op">like +</span><span class="val">1.0</span><span class="op">, skip </span><span class="val">-0.5</span></div>
+      <div class="formula-line">&nbsp;</div>
+      <div class="formula-line comment"># 新鲜度加分（没听过的歌）</div>
+      <div class="formula-line"><span class="key">fresh_score</span><span class="op">:</span> <span class="op">未听过</span> <span class="val">+0.3</span></div>
+      <div class="formula-line">&nbsp;</div>
+      <div class="formula-line comment"># 疲劳扣分（一周内播放次数）</div>
+      <div class="formula-line"><span class="key">fatigue</span><span class="op">:</span>  <span class="op">每播一次</span> <span class="val">-0.3</span></div>
+      <hr class="formula-divider">
+      <div class="formula-line comment"># 多样性限制</div>
+      <div class="formula-line"><span class="key">max_per_artist</span><span class="op"> = </span><span class="val">2</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== TECH STACK ===== -->
+<section id="tech">
+  <div class="section-label">技术栈</div>
+  <h2 class="section-title">精选技术，自包含部署</h2>
+  <p class="section-sub">全部依赖打包进单个 .exe，无需安装 Python 或任何运行时。</p>
+  <div class="tech-grid">
+    <div class="tech-item">
+      <div class="tech-bullet"></div>
+      <div><div class="tech-name">PyQt5</div><div class="tech-role">UI 框架 · Fusion 深色样式</div></div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-bullet"></div>
+      <div><div class="tech-name">pygame.mixer</div><div class="tech-role">音频引擎 · 多格式解码</div></div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-bullet"></div>
+      <div><div class="tech-name">SQLite</div><div class="tech-role">播放历史 · 推荐缓存 · 自包含</div></div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-bullet"></div>
+      <div><div class="tech-name">QPainter + QTimer</div><div class="tech-role">粒子动画 · 30fps 渲染</div></div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-bullet"></div>
+      <div><div class="tech-name">QMCv2 / AES+RC4</div><div class="tech-role">加密解密 · 内存流式解密</div></div>
+    </div>
+    <div class="tech-item">
+      <div class="tech-bullet"></div>
+      <div><div class="tech-name">PyInstaller</div><div class="tech-role">打包 · 单文件 exe · 嵌入图标</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== CHANGELOG ===== -->
+<section id="changelog" class="changelog-section">
+  <div class="section-label">版本历史</div>
+  <h2 class="section-title">持续迭代，快速进化</h2>
+  <div class="changelog-list">
+    <div class="changelog-item latest">
+      <div class="changelog-ver">v2.4</div>
+      <div class="changelog-dot"></div>
+      <div class="changelog-body">
+        <div class="changelog-date">2026-06-04</div>
+        <div class="changelog-desc"><strong>窗口缩放自适应</strong> · 🔀 随机播放 · 视图平滑过渡 · 修复列表行高缩放遮挡 · 程序图标修复</div>
+      </div>
+    </div>
+    <div class="changelog-item">
+      <div class="changelog-ver">v2.3.1</div>
+      <div class="changelog-dot"></div>
+      <div class="changelog-body">
+        <div class="changelog-date">2026-06-03</div>
+        <div class="changelog-desc">TODAY 改名「今日推荐」；↻ 同时刷新今日推荐+探索</div>
+      </div>
+    </div>
+    <div class="changelog-item">
+      <div class="changelog-ver">v2.3</div>
+      <div class="changelog-dot"></div>
+      <div class="changelog-body">
+        <div class="changelog-date">2026-06-03</div>
+        <div class="changelog-desc">重设计均衡器图标（立柱式绿/渐变）；exe 改名 Music-player.exe</div>
+      </div>
+    </div>
+    <div class="changelog-item">
+      <div class="changelog-ver">v2.2.4</div>
+      <div class="changelog-dot"></div>
+      <div class="changelog-body">
+        <div class="changelog-date">2026-06-03</div>
+        <div class="changelog-desc">NCM 解密算法从 ncmdump 源码移植，纯 Python 实现，不依赖外部工具</div>
+      </div>
+    </div>
+    <div class="changelog-item">
+      <div class="changelog-ver">v2.2</div>
+      <div class="changelog-dot"></div>
+      <div class="changelog-body">
+        <div class="changelog-date">2026-06-03</div>
+        <div class="changelog-desc">上下首按当前列表播放；新增「探索」模式；📁 选择音乐目录按钮</div>
+      </div>
+    </div>
+    <div class="changelog-item">
+      <div class="changelog-ver">v2.1</div>
+      <div class="changelog-dot"></div>
+      <div class="changelog-body">
+        <div class="changelog-date">2026-06-03</div>
+        <div class="changelog-desc">Spotify 风格重做 · 粒子动画 · 进度条拖动 · MFLAC 支持</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===== DOWNLOAD CTA ===== -->
+<div class="download-cta" id="download">
+  <div class="section-label">立即体验</div>
+  <h2>免费下载，双击即用</h2>
+  <p>无需安装任何依赖，无需配置环境。下载 exe 文件，双击运行，把你的音乐文件夹拖进去，开始享受。</p>
+  <a href="/api/music-player/download" class="btn-primary" style="font-size:15px;padding:15px 36px">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path d="M8 12l-5-5h3V2h4v5h3z"/><path d="M14 13H2v1.5h12z"/></svg>
+    下载 Music-player.exe
+  </a>
+  <div class="download-meta">
+    <span>v2.4</span>
+    <span class="sep">|</span>
+    <span>Windows 10/11</span>
+    <span class="sep">|</span>
+    <span>45 MB</span>
+    <span class="sep">|</span>
+    <span>PyQt5 + pygame</span>
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer>
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="display:flex;align-items:flex-end;gap:2px;height:14px">
+      <span style="width:2px;height:6px;background:var(--green);border-radius:1px"></span>
+      <span style="width:2px;height:11px;background:var(--green);border-radius:1px"></span>
+      <span style="width:2px;height:8px;background:var(--green);border-radius:1px"></span>
+      <span style="width:2px;height:13px;background:var(--green);border-radius:1px"></span>
+      <span style="width:2px;height:5px;background:var(--green);border-radius:1px"></span>
+    </div>
+    <span>Cyber Music Player</span>
+    <span style="color:var(--text-3)">·</span>
+    <span>part of Hermes Study</span>
+  </div>
+  <div>Built with PyQt5 · SQLite · pygame &nbsp;·&nbsp; <span style="color:var(--green)">v2.4</span></div>
+</footer>
+
+<script>
+/* ===== 粒子动画 (canvas) ===== */
+(function() {
+  const canvas = document.getElementById('particleCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2;
+  const colors = ['#1db954','#00e5ff','#b44fff','#ff6ec7','#7fff6e'];
+  let particles = [];
+  let energy = 0.5;
+  let frame = 0;
+
+  function createParticle() {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = (0.6 + Math.random() * 1.4) * (0.5 + energy);
+    return {
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 1,
+      decay: 0.012 + Math.random() * 0.018,
+      r: 1.5 + Math.random() * 2.5 * energy,
+      color: colors[Math.floor(Math.random() * colors.length)]
+    };
+  }
+
+  function tick() {
+    frame++;
+    energy = 0.4 + 0.45 * Math.abs(Math.sin(frame * 0.04));
+    const spawnCount = Math.floor(3 + energy * 8);
+    for (let i = 0; i < spawnCount; i++) particles.push(createParticle());
+
+    ctx.clearRect(0, 0, W, H);
+
+    /* glow */
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 70);
+    grad.addColorStop(0, `rgba(29,185,84,${0.06 + energy * 0.08})`);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 70, 0, Math.PI * 2);
+    ctx.fill();
+
+    particles = particles.filter(p => {
+      p.x += p.vx; p.y += p.vy;
+      p.vx *= 0.97; p.vy *= 0.97;
+      p.life -= p.decay;
+      if (p.life <= 0) return false;
+      ctx.save();
+      ctx.globalAlpha = p.life * 0.85;
+      ctx.fillStyle = p.color;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r * p.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      return true;
+    });
+
+    requestAnimationFrame(tick);
+  }
+  tick();
+})();
+
+/* ===== 进度条动画 ===== */
+(function() {
+  const fill = document.getElementById('progressFill');
+  let p = 38;
+  let dir = 1;
+  setInterval(() => {
+    p += dir * 0.08;
+    if (p >= 95) dir = -1;
+    if (p <= 5) dir = 1;
+    if (fill) fill.style.width = p + '%';
+  }, 50);
+})();
+</script>
+</body>
+</html>
