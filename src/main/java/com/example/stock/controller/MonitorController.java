@@ -80,4 +80,20 @@ public class MonitorController {
             return ApiResult.error("采集失败: " + e.getMessage());
         }
     }
+
+    /**
+     * 手动清理 7 天前的数据
+     */
+    @PostMapping("/cleanup")
+    public ApiResult<String> cleanup() {
+        try {
+            log.info("Manual cleanup triggered");
+            metricsStore.cleanupOldData();
+            supabase.cleanupOldData();
+            return ApiResult.success("清理完成，已删除 7 天前的过期数据");
+        } catch (Exception e) {
+            log.error("Cleanup failed", e);
+            return ApiResult.error("清理失败: " + e.getMessage());
+        }
+    }
 }
