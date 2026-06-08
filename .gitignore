@@ -16,3 +16,5 @@ logs/
 # Large binary / design artifacts
 downloads/
 music-player/
+application.yml
+application-prod.yml

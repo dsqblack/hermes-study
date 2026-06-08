@@ -333,6 +333,47 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         </div>
       </a>
 
+      <a class="bento-card stock" href="/monitor">
+        <div class="card-inner">
+          <div class="card-top">
+            <div style="display:flex;align-items:flex-start;gap:14px">
+              <div class="card-icon-wrap blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
+              <div class="card-info">
+                <h2>服务器监控</h2>
+                <p>ECS 实时指标 · CPU/内存/磁盘/负载趋势</p>
+              </div>
+            </div>
+            <div class="card-arrow">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+          <div class="stats-row" id="monitorPreview">
+            <div class="stat-box">
+              <div class="stat-label">CPU</div>
+              <div class="stat-value" style="font-size:20px;color:var(--blue)" id="monCpu">--</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">内存</div>
+              <div class="stat-value" style="font-size:20px;color:var(--blue)" id="monMem">--</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">磁盘</div>
+              <div class="stat-value" style="font-size:20px;color:var(--blue)" id="monDsk">--</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-label">负载</div>
+              <div class="stat-value" style="font-size:20px;color:var(--blue)" id="monLoad">--</div>
+            </div>
+          </div>
+          <div class="card-meta">
+            <span id="monMeta">加载中...</span>
+            <span>实时监控 · Supabase</span>
+          </div>
+        </div>
+      </a>
+
       <a class="bento-card stock" href="/tools">
         <div class="card-inner">
           <div class="card-top">
@@ -464,6 +505,23 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     });
   }
   loadMemoSummary();
+
+  function loadMonitorSummary() {
+    fetch('/api/monitor/current').then(function(r) { return r.json(); }).then(function(d) {
+      if (d.code === 0 && d.data) {
+        var m = d.data;
+        document.getElementById('monCpu').textContent = (m.cpu_usage || 0).toFixed(1) + '%';
+        document.getElementById('monMem').textContent = (m.memory_usage || 0).toFixed(1) + '%';
+        document.getElementById('monDsk').textContent = (m.disk_usage || 0).toFixed(0) + '%';
+        document.getElementById('monLoad').textContent = (m.load_average || 0).toFixed(2);
+        document.getElementById('monMeta').textContent = '更新于 ' + new Date(m.created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+      }
+    }).catch(function() {
+      document.getElementById('monCpu').textContent = '--';
+    });
+  }
+  loadMonitorSummary();
+  setInterval(loadMonitorSummary, 30000);
 })();
 </script>
 </body>

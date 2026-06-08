@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>服务器监控 - Hermes Study</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f0f2f7;
+  --bg-card: rgba(255,255,255,0.72);
+  --bg-card-solid: #ffffff;
+  --bg-hover: #f0f2f5;
+  --border: rgba(0,0,0,0.06);
+  --border-hover: rgba(37,99,235,0.25);
+  --text: #0f172a;
+  --text-sec: #475569;
+  --text-muted: #94a3b8;
+  --blue: #2563eb;
+  --blue-soft: #3b82f6;
+  --blue-bg: rgba(37,99,235,0.07);
+  --rise: #ef4444;
+  --fall: #22c55e;
+  --amber: #f59e0b;
+  --amber-bg: rgba(245,158,11,0.08);
+  --green: #1db954;
+  --green-bg: rgba(29,185,84,0.08);
+  --purple: #7c3aed;
+  --purple-bg: rgba(124,58,237,0.08);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.08);
+  --shadow-glow: 0 0 40px rgba(37,99,235,0.06);
+  --ease: 200ms cubic-bezier(0.4,0,0.2,1);
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  --mono: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+[data-theme="dark"] {
+  --bg: #0a0c14;
+  --bg-card: rgba(30,32,48,0.72);
+  --bg-card-solid: #1e2030;
+  --bg-hover: #1a1d2e;
+  --border: rgba(255,255,255,0.06);
+  --border-hover: rgba(96,165,250,0.3);
+  --text: #f1f5f9;
+  --text-sec: #94a3b8;
+  --text-muted: #475569;
+  --blue: #60a5fa;
+  --blue-soft: #93c5fd;
+  --blue-bg: rgba(96,165,250,0.08);
+  --rise: #f87171;
+  --fall: #4ade80;
+  --amber-bg: rgba(245,158,11,0.1);
+  --green-bg: rgba(29,185,84,0.1);
+  --purple-bg: rgba(167,139,250,0.1);
+  --shadow-card: 0 1px 3px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.15);
+  --shadow-hover: 0 8px 30px rgba(0,0,0,0.3);
+  --shadow-glow: 0 0 60px rgba(96,165,250,0.06);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:14px;scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+
+.bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.35;animation:orbFloat 20s ease-in-out infinite}
+.bg-orb:nth-child(1){width:500px;height:500px;background:var(--blue);top:-10%;left:-5%}
+.bg-orb:nth-child(2){width:400px;height:400px;background:#7c3aed;top:50%;right:-8%;animation-delay:-7s;animation-duration:25s}
+.bg-orb:nth-child(3){width:350px;height:350px;background:#06b6d4;bottom:-10%;left:30%;animation-delay:-14s;animation-duration:22s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.05)}66%{transform:translate(-20px,30px) scale(0.95)}}
+[data-theme="dark"] .bg-orb{opacity:0.12}
+
+.bg-dots{position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);
+  background-size:28px 28px}
+
+.header{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:56px;backdrop-filter:blur(20px) saturate(1.6);background:var(--bg-card);border-bottom:1px solid var(--border)}
+.header-left{display:flex;align-items:center;gap:12px}
+.header-logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--blue),#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(37,99,235,0.25)}
+.header-logo svg{width:18px;height:18px;color:#fff}
+.header-title{font-size:15px;font-weight:600;letter-spacing:-0.3px}
+.header-right{display:flex;align-items:center;gap:12px}
+.theme-toggle{width:34px;height:34px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text-sec);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all var(--ease)}
+.theme-toggle:hover{border-color:var(--border-hover);color:var(--blue);background:var(--blue-bg);transform:scale(1.05)}
+.back-link{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);color:var(--text-sec);text-decoration:none;font-size:12px;font-weight:500;transition:all var(--ease)}
+.back-link:hover{border-color:var(--border-hover);color:var(--blue);background:var(--blue-bg)}
+.back-link svg{width:14px;height:14px}
+
+.main{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:40px 32px 80px}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;animation:fadeUp 0.6s var(--ease) both}
+.page-header h1{font-size:22px;font-weight:700;display:flex;align-items:center;gap:10px;letter-spacing:-0.3px}
+.page-header h1 svg{width:22px;height:22px;color:var(--blue)}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;font-size:12px;font-weight:500}
+.status-badge.online{background:var(--green-bg);color:var(--green)}
+.status-badge.offline{background:var(--amber-bg);color:var(--amber)}
+.status-dot{width:6px;height:6px;border-radius:50%;display:inline-block;animation:pulse 2s ease-in-out infinite}
+.status-dot.online{background:var(--green)}
+.status-dot.offline{background:var(--amber)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;animation:fadeUp 0.6s var(--ease) both;animation-delay:0.05s}
+.card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;backdrop-filter:blur(12px);transition:all var(--ease)}
+.card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-hover),var(--shadow-glow);transform:translateY(-2px)}
+.card .label{font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.card .value{font-size:28px;font-weight:700;line-height:1.1;display:flex;align-items:baseline;gap:4px}
+.card .value .unit{font-size:13px;font-weight:500;color:var(--text-muted)}
+.card .sub{font-size:12px;color:var(--text-muted);margin-top:4px}
+.card .sub .num{color:var(--text-sec);font-weight:500}
+.card .progress-bar{width:100%;height:4px;background:var(--bg);border-radius:2px;margin-top:14px;overflow:hidden}
+.card .progress-bar .fill{height:100%;border-radius:2px;transition:width 0.5s ease}
+.fill-low{background:var(--fall)}
+.fill-mid{background:var(--amber)}
+.fill-high{background:var(--rise)}
+.card-cpu .value{color:var(--blue)}
+.card-mem .value{color:var(--green)}
+.card-dsk .value{color:var(--amber)}
+.card-load .value{color:var(--purple)}
+
+.chart-section{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px 24px;backdrop-filter:blur(12px);animation:fadeUp 0.6s var(--ease) both;animation-delay:0.1s;transition:all var(--ease)}
+.chart-section:hover{border-color:var(--border-hover);box-shadow:var(--shadow-hover),var(--shadow-glow)}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.chart-header h3{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px}
+.chart-header h3 svg{width:16px;height:16px;color:var(--blue)}
+.chart-tabs{display:flex;gap:4px;background:var(--bg);border-radius:var(--radius-sm);padding:3px}
+.chart-tabs .tab{padding:5px 14px;border-radius:4px;font-size:12px;font-weight:500;cursor:pointer;border:none;background:transparent;color:var(--text-muted);transition:all var(--ease);white-space:nowrap}
+.chart-tabs .tab.active{background:var(--bg-card-solid);color:var(--blue);box-shadow:0 1px 2px rgba(0,0,0,0.06)}
+.chart-tabs .tab:hover:not(.active){color:var(--text-sec)}
+.chart-box{width:100%;height:320px;min-height:320px;position:relative}
+.chart-box svg{width:100%;height:100%;display:block}
+
+.info-bar{display:flex;align-items:center;gap:16px;margin-top:12px;padding:12px 16px;background:var(--bg);border-radius:var(--radius-sm);font-size:12px;color:var(--text-muted);border:1px solid var(--border);animation:fadeUp 0.6s var(--ease) both;animation-delay:0.15s;flex-wrap:wrap;gap:8px}
+.info-bar svg{width:14px;height:14px;color:var(--blue);flex-shrink:0}
+.info-bar span{display:flex;align-items:center;gap:4px}
+.info-bar .sep{width:1px;height:12px;background:var(--border)}
+
+.footer{position:relative;z-index:1;text-align:center;padding:32px;font-size:12px;color:var(--text-muted)}
+.footer a{color:var(--blue);text-decoration:none;font-weight:500;transition:opacity var(--ease)}
+
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:640px){
+  .header{padding:0 16px;height:48px}
+  .main{padding:24px 16px 60px}
+  .page-header{flex-direction:column;align-items:flex-start;gap:12px}
+  .cards{grid-template-columns:1fr;gap:12px}
+  .card{padding:16px 20px;overflow:hidden}
+  .card .value{font-size:24px}
+  .chart-section{padding:16px}
+  .info-bar{gap:6px;font-size:11px}
+}
+</style>
+</head>
+<body>
+<div class="bg-orbs">
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+  <div class="bg-orb"></div>
+</div>
+<div class="bg-dots"></div>
+
+<div id="app">
+  <header class="header">
+    <div class="header-left">
+      <div class="header-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
+      </div>
+      <span class="header-title">服务器监控</span>
+    </div>
+    <div class="header-right">
+      <a class="back-link" href="/">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
+        返回首页
+      </a>
+      <button class="theme-toggle" id="themeToggle" title="切换暗色模式">
+        <svg id="iconSun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+        <svg id="iconMoon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="main">
+    <div class="page-header">
+      <h1>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        服务器监控
+      </h1>
+      <div class="status-badge online" id="statusBadge">
+        <span class="status-dot online" id="statusDot"></span>
+        <span id="statusText">在线</span>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card card-cpu">
+        <div class="label">CPU 使用率</div>
+        <div class="value"><span id="cpuVal">--</span><span class="unit">%</span></div>
+        <div class="sub">2 核</div>
+        <div class="progress-bar"><div class="fill" id="cpuBar" style="width:0%"></div></div>
+      </div>
+      <div class="card card-mem">
+        <div class="label">内存使用率</div>
+        <div class="value"><span id="memVal">--</span><span class="unit">%</span></div>
+        <div class="sub"><span class="num" id="memUsed">--</span> / <span class="num" id="memTotal">--</span> GB</div>
+        <div class="progress-bar"><div class="fill" id="memBar" style="width:0%"></div></div>
+      </div>
+      <div class="card card-dsk">
+        <div class="label">磁盘使用率</div>
+        <div class="value"><span id="dskVal">--</span><span class="unit">%</span></div>
+        <div class="sub"><span class="num" id="dskUsed">--</span> / <span class="num" id="dskTotal">--</span> GB</div>
+        <div class="progress-bar"><div class="fill" id="dskBar" style="width:0%"></div></div>
+      </div>
+      <div class="card card-load">
+        <div class="label">系统负载 (1min)</div>
+        <div class="value"><span id="loadVal">--</span></div>
+        <div class="sub">2 核</div>
+        <div class="progress-bar"><div class="fill" id="loadBar" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="chart-section">
+      <div class="chart-header">
+        <h3>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          趋势图表
+        </h3>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="chart-tabs" id="timeRangeTabs">
+            <button class="tab active" data-hours="1">1 小时</button>
+            <button class="tab" data-hours="6">6 小时</button>
+            <button class="tab" data-hours="24">24 小时</button>
+            <button class="tab" data-hours="168">7 天</button>
+          </div>
+          <div class="chart-tabs" id="chartTabs">
+            <button class="tab active" data-field="cpu">CPU</button>
+            <button class="tab" data-field="mem">内存</button>
+            <button class="tab" data-field="dsk">磁盘</button>
+            <button class="tab" data-field="load">负载</button>
+            <button class="tab" data-field="all">全部</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-box" id="trendChart">
+        <svg id="chartSvg" viewBox="0 0 900 300" preserveAspectRatio="none" style="width:100%;height:100%"></svg>
+      </div>
+    </div>
+
+    <div class="info-bar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>每 30 秒采集一次</span>
+      <span class="sep"></span>
+      <span>ECS · 47.116.57.142</span>
+      <span class="sep"></span>
+      <span>最后更新: <strong id="lastUpdate">--:--:--</strong></span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="/">← 返回 Hermes Study</a>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ===== 暗色主题 =====
+  var theme = localStorage.getItem('hermes-theme') || 'light';
+  function applyTheme(t) {
+    if (t === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      document.getElementById('iconSun').style.display = 'none';
+      document.getElementById('iconMoon').style.display = 'block';
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      document.getElementById('iconSun').style.display = 'block';
+      document.getElementById('iconMoon').style.display = 'none';
+    }
+  }
+  applyTheme(theme);
+  document.getElementById('themeToggle').addEventListener('click', function() {
+    var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    theme = isDark ? 'light' : 'dark';
+    localStorage.setItem('hermes-theme', theme);
+    applyTheme(theme);
+  });
+
+  // ===== 状态 =====
+  var currentField = 'cpu';
+  var currentHours = 1;
+  var historyData = [];
+  var COLORS = {
+    cpu: '#2563eb', mem: '#1db954', dsk: '#f59e0b', load: '#7c3aed'
+  };
+
+  // ===== 工具 =====
+  function fmtPercent(v) { return v != null ? v.toFixed(1) : '--'; }
+  function fmtGb(kb) { return kb != null ? (kb / 1024 / 1024).toFixed(1) : '--'; }
+  function fmtTime(iso) {
+    if (!iso) return '--:--:--';
+    var d = new Date(iso);
+    return String(d.getHours()).padStart(2,'0') + ':' +
+           String(d.getMinutes()).padStart(2,'0') + ':' +
+           String(d.getSeconds()).padStart(2,'0');
+  }
+
+  // ===== SVG 图表渲染 =====
+  var MARGIN = { top: 10, right: 20, bottom: 30, left: 50 };
+  var SVG_W = 900, SVG_H = 300;
+
+  function renderChart(field, data) {
+    var svg = document.getElementById('chartSvg');
+    if (!svg || data.length === 0) return;
+
+    // 清空
+    svg.innerHTML = '';
+
+    var plotW = SVG_W - MARGIN.left - MARGIN.right;
+    var plotH = SVG_H - MARGIN.top - MARGIN.bottom;
+
+    // 确定要画的字段
+    var fields = [];
+    if (field === 'all') {
+      fields = [{key:'cpu_usage',name:'CPU',color:COLORS.cpu},
+                {key:'memory_usage',name:'内存',color:COLORS.mem},
+                {key:'disk_usage',name:'磁盘',color:COLORS.dsk},
+                {key:'load_average',name:'负载',color:COLORS.load}];
+    } else {
+      var keyMap = {cpu:'cpu_usage', mem:'memory_usage', dsk:'disk_usage', load:'load_average'};
+      var nameMap = {cpu:'CPU', mem:'内存', dsk:'磁盘', load:'负载'};
+      fields = [{key:keyMap[field], name:nameMap[field], color:COLORS[field]}];
+    }
+
+    // 计算数据范围
+    var allVals = [];
+    fields.forEach(function(f) {
+      data.forEach(function(d) {
+        var v = d[f.key];
+        if (v != null) allVals.push(+v);
+      });
+    });
+    if (allVals.length === 0) { svg.innerHTML = '<text x="450" y="150" text-anchor="middle" fill="#94a3b8" font-size="13">暂无数据</text>'; return; }
+
+    var yMin = Math.min.apply(null, allVals);
+    var yMax = Math.max.apply(null, allVals);
+    if (yMax === yMin) { yMax = yMin + 10; }
+    var yRange = yMax - yMin;
+    yMin = Math.max(0, yMin - yRange * 0.1);
+    yMax = yMax + yRange * 0.1;
+
+    // 时间标签
+    var times = data.map(function(d) { return fmtTime(d.created_at); });
+
+    // 画网格线 (水平)
+    var gridLines = 5;
+    var ns = document.createDocumentFragment();
+    for (var i = 0; i <= gridLines; i++) {
+      var y = MARGIN.top + (plotH / gridLines) * i;
+      var line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', MARGIN.left);
+      line.setAttribute('y1', y);
+      line.setAttribute('x2', SVG_W - MARGIN.right);
+      line.setAttribute('y2', y);
+      line.setAttribute('stroke', 'var(--border)');
+      line.setAttribute('stroke-width', '1');
+      ns.appendChild(line);
+
+      var val = yMax - (yMax - yMin) * i / gridLines;
+      var label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      label.setAttribute('x', MARGIN.left - 8);
+      label.setAttribute('y', y + 4);
+      label.setAttribute('text-anchor', 'end');
+      label.setAttribute('fill', '#94a3b8');
+      label.setAttribute('font-size', '11');
+      label.textContent = field === 'load' && fields.length === 1 ? val.toFixed(1) : Math.round(val);
+      ns.appendChild(label);
+    }
+
+    // 画数据线
+    var stepX = plotW / Math.max(data.length - 1, 1);
+
+    function yPos(v) { return MARGIN.top + plotH - ((v - yMin) / (yMax - yMin)) * plotH; }
+
+    fields.forEach(function(f) {
+      var pts = [];
+      data.forEach(function(d, idx) {
+        var v = d[f.key];
+        if (v == null) return;
+        pts.push({ x: MARGIN.left + idx * stepX, y: yPos(+v) });
+      });
+      if (pts.length < 2) return;
+
+      // 面积填充
+      var areaD = 'M' + pts[0].x + ',' + (MARGIN.top + plotH);
+      pts.forEach(function(p) { areaD += 'L' + p.x + ',' + p.y; });
+      areaD += 'L' + pts[pts.length-1].x + ',' + (MARGIN.top + plotH) + 'Z';
+      var area = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      area.setAttribute('d', areaD);
+      area.setAttribute('fill', f.color);
+      area.setAttribute('opacity', '0.12');
+      ns.appendChild(area);
+
+      // 线
+      var lineD = 'M' + pts[0].x + ',' + pts[0].y;
+      for (var j = 1; j < pts.length; j++) {
+        lineD += 'L' + pts[j].x + ',' + pts[j].y;
+      }
+      var line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      line.setAttribute('d', lineD);
+      line.setAttribute('fill', 'none');
+      line.setAttribute('stroke', f.color);
+      line.setAttribute('stroke-width', '2');
+      line.setAttribute('stroke-linejoin', 'round');
+      ns.appendChild(line);
+
+      // 数据点（最新一个加圆点）
+      var last = pts[pts.length-1];
+      var dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      dot.setAttribute('cx', last.x);
+      dot.setAttribute('cy', last.y);
+      dot.setAttribute('r', '3.5');
+      dot.setAttribute('fill', '#fff');
+      dot.setAttribute('stroke', f.color);
+      dot.setAttribute('stroke-width', '2');
+      ns.appendChild(dot);
+    });
+
+    // x轴时间标签（间隔显示，避免太挤）
+    var maxLabels = Math.min(data.length, Math.floor(plotW / 80));
+    var labelStep = Math.max(1, Math.floor(data.length / maxLabels));
+    for (var k = 0; k < data.length; k += labelStep) {
+      var xl = MARGIN.left + k * stepX;
+      var lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      lbl.setAttribute('x', xl);
+      lbl.setAttribute('y', SVG_H - 5);
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('fill', '#9ca3af');
+      lbl.setAttribute('font-size', '10');
+      lbl.textContent = times[k];
+      ns.appendChild(lbl);
+    }
+
+    svg.appendChild(ns);
+  }
+
+  // ===== 渲染指标卡片 =====
+  function renderCurrent(m) {
+    if (!m) return;
+    document.getElementById('cpuVal').textContent = fmtPercent(m.cpu_usage);
+    document.getElementById('memVal').textContent = fmtPercent(m.memory_usage);
+    document.getElementById('dskVal').textContent = fmtPercent(m.disk_usage);
+    document.getElementById('loadVal').textContent = m.load_average != null ? m.load_average.toFixed(2) : '--';
+    document.getElementById('memUsed').textContent = fmtGb(m.memory_used);
+    document.getElementById('memTotal').textContent = fmtGb(m.memory_total);
+    document.getElementById('dskUsed').textContent = fmtGb(m.disk_used);
+    document.getElementById('dskTotal').textContent = fmtGb(m.disk_total);
+    var cpuPct = Math.min(m.cpu_usage || 0, 100);
+    var memPct = Math.min(m.memory_usage || 0, 100);
+    var dskPct = Math.min(m.disk_usage || 0, 100);
+    var loadPct = Math.min((m.load_average || 0) * 50, 100);
+    document.getElementById('cpuBar').style.width = cpuPct + '%';
+    document.getElementById('cpuBar').className = 'fill ' + (cpuPct < 60 ? 'fill-low' : cpuPct < 80 ? 'fill-mid' : 'fill-high');
+    document.getElementById('memBar').style.width = memPct + '%';
+    document.getElementById('memBar').className = 'fill ' + (memPct < 60 ? 'fill-low' : memPct < 80 ? 'fill-mid' : 'fill-high');
+    document.getElementById('dskBar').style.width = dskPct + '%';
+    document.getElementById('dskBar').className = 'fill ' + (dskPct < 60 ? 'fill-low' : dskPct < 80 ? 'fill-mid' : 'fill-high');
+    document.getElementById('loadBar').style.width = loadPct + '%';
+    document.getElementById('loadBar').className = 'fill ' + (loadPct < 60 ? 'fill-low' : loadPct < 80 ? 'fill-mid' : 'fill-high');
+    document.getElementById('lastUpdate').textContent = fmtTime(m.created_at);
+  }
+
+  function setOnline(online) {
+    document.getElementById('statusBadge').className = 'status-badge ' + (online ? 'online' : 'offline');
+    document.getElementById('statusDot').className = 'status-dot ' + (online ? 'online' : 'offline');
+    document.getElementById('statusText').textContent = online ? '在线' : '离线';
+  }
+
+  // ===== 数据加载 =====
+  function loadData() {
+    fetch('/api/monitor/current')
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.code === 0 && d.data) {
+          renderCurrent(d.data);
+          setOnline(true);
+        } else { setOnline(false); }
+      })
+      .catch(function() { setOnline(false); });
+
+    fetch('/api/monitor/history?hours=' + currentHours)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.code === 0 && d.data && d.data.length > 0) {
+          historyData = d.data;
+          renderChart(currentField, d.data);
+        }
+      })
+      .catch(function() {});
+  }
+
+  // ===== 事件绑定 =====
+  document.getElementById('chartTabs').addEventListener('click', function(e) {
+    var tab = e.target.closest('.tab');
+    if (!tab) return;
+    document.querySelectorAll('#chartTabs .tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    currentField = tab.dataset.field;
+    if (historyData.length > 0) renderChart(currentField, historyData);
+  });
+
+  document.getElementById('timeRangeTabs').addEventListener('click', function(e) {
+    var tab = e.target.closest('.tab');
+    if (!tab) return;
+    document.querySelectorAll('#timeRangeTabs .tab').forEach(function(t) { t.classList.remove('active'); });
+    tab.classList.add('active');
+    currentHours = parseInt(tab.dataset.hours);
+    fetch('/api/monitor/history?hours=' + currentHours)
+      .then(function(r) { return r.json(); })
+      .then(function(d) {
+        if (d.code === 0 && d.data) {
+          historyData = d.data;
+          renderChart(currentField, d.data);
+        }
+      })
+      .catch(function() {});
+  });
+
+  // ===== 启动 =====
+  loadData();
+  setInterval(loadData, 10_000);
+})();
+</script>
+</body>
+</html>
