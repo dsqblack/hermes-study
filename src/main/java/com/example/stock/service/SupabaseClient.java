@@ -12,6 +12,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -90,6 +91,32 @@ public class SupabaseClient {
         } catch (Exception e) {
             log.error("Supabase queryHistory error", e);
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * 清理 7 天前的过期数据
+     * 每天由定时任务调用一次
+     */
+    public void cleanupOldData() {
+        try {
+            ZonedDateTime cutoff = ZonedDateTime.now(ZoneOffset.UTC).minusDays(7);
+            String cutoffStr = cutoff.format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+
+            String url = config.getUrl() + "/rest/v1/server_metrics"
+                    + "?created_at=lt." + cutoffStr;
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add("apikey", config.getServiceRoleKey());
+            headers.add("Authorization", "Bearer " + config.getServiceRoleKey());
+            headers.add("Prefer", "return=minimal");
+
+            HttpEntity<Void> entity = new HttpEntity<>(headers);
+            ResponseEntity<String> resp = rest.exchange(url, HttpMethod.DELETE, entity, String.class);
+
+            log.info("Supabase cleanup: deleted records older than {} days, status={}", 7, resp.getStatusCode());
+        } catch (Exception e) {
+            log.error("Supabase cleanup error", e);
         }
     }
 

@@ -61,6 +61,16 @@ public class MetricsCollectorService {
     }
 
     /**
+     * 每天凌晨 3:00 清理超过 7 天的数据
+     */
+    @Scheduled(cron = "0 0 3 * * ?")
+    public void cleanup() {
+        log.info("Starting daily data cleanup...");
+        localStore.cleanupOldData();
+        supabase.cleanupOldData();
+    }
+
+    /**
      * SSH 到 ECS 执行采集命令，返回解析后的指标
      */
     public MetricDTO collectMetrics() throws Exception {

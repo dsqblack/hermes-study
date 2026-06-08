@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -71,6 +72,27 @@ public class MetricsStore {
                         }
                     })
                     .collect(Collectors.toList());
+        }
+    }
+
+    /** 清理超过 7 天的本地缓存 */
+    public void cleanupOldData() {
+        ZonedDateTime cutoff = ZonedDateTime.now(ZoneOffset.UTC).minusDays(7);
+        synchronized (buffer) {
+            int before = buffer.size();
+            buffer.removeIf(m -> {
+                try {
+                    ZonedDateTime t = ZonedDateTime.parse(m.getCreatedAt(),
+                            DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+                    return t.isBefore(cutoff);
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+            int removed = before - buffer.size();
+            if (removed > 0) {
+                log.info("MetricsStore cleanup: removed {} outdated records", removed);
+            }
         }
     }
 
