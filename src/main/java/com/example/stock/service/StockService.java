@@ -27,8 +27,15 @@ public class StockService {
 
     private static final Charset GBK = Charset.forName("GBK");
 
+    /** 行情数据缓存有效期（毫秒） */
+    private static final long CACHE_DURATION_MS = 60_000L;
+
     private final HttpClient http;
     private final ObjectMapper om = new ObjectMapper();
+
+    /** 缓存字段：缓存数据 + 最近一次更新时间戳 */
+    private volatile Map<String, Object> cachedData;
+    private volatile long lastFetchTime;
 
     public StockService() {
         HttpClient.Builder builder = HttpClient.newBuilder()
@@ -56,6 +63,13 @@ public class StockService {
     }
 
     public Map<String, Object> fetchHotData() {
+        // 缓存命中：60秒内直接返回，不重复爬取
+        long now = System.currentTimeMillis();
+        if (cachedData != null && now - lastFetchTime < CACHE_DURATION_MS) {
+            log.debug("fetchHotData cache hit, age={}ms", now - lastFetchTime);
+            return cachedData;
+        }
+
         Map<String, Object> result = new LinkedHashMap<>();
         try {
             result.put("indices", fetchIndices());
@@ -84,6 +98,10 @@ public class StockService {
             result.put("news", List.of());
         }
         result.put("code", 0);
+
+        // 写入缓存
+        cachedData = result;
+        lastFetchTime = now;
         return result;
     }
 
