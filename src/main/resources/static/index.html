@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Hermes Study</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
 :root {
   --bg: #f0f2f7;
@@ -30,6 +31,8 @@
   --green-bg: rgba(29,185,84,0.08);
   --purple: #7c3aed;
   --purple-bg: rgba(124,58,237,0.08);
+  --teal: #0d9488;
+  --teal-bg: rgba(13,148,136,0.08);
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
@@ -62,6 +65,7 @@
   --amber-bg: rgba(245,158,11,0.1);
   --green-bg: rgba(29,185,84,0.1);
   --purple-bg: rgba(167,139,250,0.1);
+  --teal-bg: rgba(45,212,191,0.1);
   --shadow-card: 0 1px 3px rgba(0,0,0,0.2), 0 4px 16px rgba(0,0,0,0.15);
   --shadow-hover: 0 8px 30px rgba(0,0,0,0.3);
   --shadow-glow: 0 0 60px rgba(96,165,250,0.06);
@@ -71,70 +75,95 @@ html{font-size:14px;scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
 
 .bg-orbs{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
-.bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.35;animation:orbFloat 20s ease-in-out infinite}
+.bg-orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:0.35;animation:orbFloat 20s ease-in-out infinite;will-change:transform}
 .bg-orb:nth-child(1){width:500px;height:500px;background:var(--blue);top:-10%;left:-5%;animation-delay:0s}
 .bg-orb:nth-child(2){width:400px;height:400px;background:#7c3aed;top:50%;right:-8%;animation-delay:-7s;animation-duration:25s}
 .bg-orb:nth-child(3){width:350px;height:350px;background:#06b6d4;bottom:-10%;left:30%;animation-delay:-14s;animation-duration:22s}
 @keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-40px) scale(1.05)}66%{transform:translate(-20px,30px) scale(0.95)}}
 [data-theme="dark"] .bg-orb{opacity:0.12}
+.bg-dots{position:fixed;inset:0;pointer-events:none;z-index:0;background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);background-size:28px 28px}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--text-muted);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-sec)}
 
-.bg-dots{position:fixed;inset:0;pointer-events:none;z-index:0;
-  background-image:radial-gradient(circle,var(--border) 1px,transparent 1px);
-  background-size:28px 28px}
-
-.header{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:56px;backdrop-filter:blur(20px) saturate(1.6);background:var(--bg-card);border-bottom:1px solid var(--border)}
+/* === Header === */
+.header{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-content:space-between;padding:0 32px;height:56px;backdrop-filter:blur(20px) saturate(1.6);background:var(--bg-card);border-bottom:1px solid var(--border);will-change:transform}
 .header-left{display:flex;align-items:center;gap:12px}
 .header-logo{width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,var(--blue),#7c3aed);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 2px 8px rgba(37,99,235,0.25)}
 .header-logo svg{width:18px;height:18px;color:#fff}
 .header-title{font-size:15px;font-weight:600;letter-spacing:-0.3px}
+.header-nav{display:flex;align-items:center;gap:6px;margin-left:32px}
+.header-nav a{padding:6px 12px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;color:var(--text-sec);text-decoration:none;transition:all var(--ease)}
+.header-nav a:hover{color:var(--blue);background:var(--blue-bg)}
 .header-right{display:flex;align-items:center;gap:12px}
 .header-time{font-size:12px;color:var(--text-muted);font-family:var(--mono);background:var(--bg);padding:4px 10px;border-radius:var(--radius-sm);border:1px solid var(--border)}
-
 .theme-toggle{width:34px;height:34px;border-radius:var(--radius-sm);border:1px solid var(--border);background:transparent;color:var(--text-sec);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all var(--ease)}
 .theme-toggle:hover{border-color:var(--border-hover);color:var(--blue);background:var(--blue-bg);transform:scale(1.05)}
 
-.main{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:40px 32px 80px}
-
-.hero{text-align:center;margin-bottom:48px;animation:fadeUp 0.6s var(--ease) both}
+/* === Hero === */
+.hero{position:relative;z-index:1;text-align:center;padding:64px 32px 40px;animation:fadeUp 0.6s var(--ease) both}
 .hero-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:999px;background:var(--blue-bg);color:var(--blue);font-size:12px;font-weight:500;margin-bottom:20px;border:1px solid rgba(37,99,235,0.12)}
 .hero-badge .dot{width:6px;height:6px;border-radius:50%;background:var(--blue);animation:pulse 2s ease-in-out infinite}
-.hero h1{font-size:36px;font-weight:700;letter-spacing:-0.5px;line-height:1.2;margin-bottom:12px}
+.hero h1{font-size:38px;font-weight:800;letter-spacing:-0.5px;line-height:1.15;margin-bottom:12px}
 .hero h1 .gradient{background:linear-gradient(135deg,var(--blue),#7c3aed,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
 .hero p{font-size:15px;color:var(--text-sec);line-height:1.7;max-width:480px;margin:0 auto}
-.hero-tech{display:flex;gap:8px;justify-content:center;margin-top:20px;flex-wrap:wrap}
-.hero-tech .pill{display:inline-flex;align-items:center;gap:5px;padding:6px 14px;border-radius:var(--radius-sm);font-size:12px;font-weight:500;background:var(--bg-card-solid);border:1px solid var(--border);color:var(--text-sec);transition:all var(--ease)}
-.hero-tech .pill:hover{border-color:var(--border-hover);color:var(--blue);background:var(--blue-bg)}
+.hero-stats{display:flex;gap:24px;justify-content:center;margin-top:28px;flex-wrap:wrap}
+.hero-stat{text-align:center}
+.hero-stat .num{font-size:28px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.hero-stat .label{font-size:12px;color:var(--text-muted);margin-top:2px}
 
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
-@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+/* === Main Container === */
+.main{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:0 32px 80px}
 
-.bento{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-.bento-card{position:relative;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;transition:all var(--ease);text-decoration:none;color:inherit;overflow:hidden;backdrop-filter:blur(12px);animation:fadeUp 0.6s var(--ease) both}
-.bento-card:nth-child(1){animation-delay:0.1s}
-.bento-card:nth-child(2){animation-delay:0.15s}
-.bento-card:nth-child(3){animation-delay:0.2s}
-.bento-card:nth-child(4){animation-delay:0.25s}
-.bento-card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-hover),var(--shadow-glow);transform:translateY(-3px)}
-.bento-card:active{transform:translateY(-1px);transition-duration:100ms}
-.bento-card.stock{grid-column:1/-1}
+/* === Section Header === */
+.section-header{display:flex;flex-direction:column;align-items:flex-start;margin-bottom:20px;animation:fadeUp 0.5s var(--ease) both}
+.section-header.centered{align-items:center;text-align:center}
+.section-tag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--blue);margin-bottom:6px}
+.section-tag::before{content:'';width:16px;height:2px;background:var(--blue);border-radius:1px}
+.section-title{font-size:22px;font-weight:700;letter-spacing:-0.3px;color:var(--text)}
+.section-desc{font-size:13px;color:var(--text-muted);margin-top:4px}
 
-.card-inner{padding:24px 28px}
+/* === Section Spacing === */
+.section{padding:20px 0}
+.section+.section{border-top:1px solid var(--border);margin-top:8px}
+
+/* === Cards Grid === */
+.primary-card{display:block;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-xl);cursor:pointer;text-decoration:none;color:inherit;overflow:hidden;transition:all var(--ease)}
+.primary-card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-hover),var(--shadow-glow);transform:translateY(-2px)}
+.primary-card:active{transform:translateY(0);transition-duration:100ms}
+.primary-card .card-inner{padding:28px 32px}
+
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid-full{display:grid;grid-template-columns:1fr;gap:16px}
+
+.card{display:block;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);cursor:pointer;text-decoration:none;color:inherit;overflow:hidden;transition:all var(--ease)}
+.card:hover{border-color:var(--border-hover);box-shadow:var(--shadow-hover),var(--shadow-glow);transform:translateY(-2px)}
+.card:active{transform:translateY(0);transition-duration:100ms}
+.card .card-inner{padding:24px}
+
 .card-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px}
 .card-icon-wrap{width:44px;height:44px;border-radius:var(--radius-md);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:transform var(--ease-bounce)}
-.bento-card:hover .card-icon-wrap{transform:scale(1.08)}
+.card:hover .card-icon-wrap{transform:scale(1.08)}
 .card-icon-wrap svg{width:22px;height:22px}
 .card-icon-wrap.blue{background:var(--blue-bg);color:var(--blue)}
 .card-icon-wrap.amber{background:var(--amber-bg);color:var(--amber)}
 .card-icon-wrap.green{background:var(--green-bg);color:var(--green-spotify)}
 .card-icon-wrap.purple{background:var(--purple-bg);color:var(--purple)}
-.card-info{flex:1;margin-left:14px}
-.card-info h2{font-size:16px;font-weight:600;letter-spacing:-0.2px;margin-bottom:2px}
-.card-info p{font-size:12px;color:var(--text-muted);line-height:1.4}
-.card-arrow{width:32px;height:32px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all var(--ease);flex-shrink:0;color:var(--text-muted)}
-.card-arrow svg{width:14px;height:14px}
-.bento-card:hover .card-arrow{background:var(--blue);border-color:var(--blue);color:#fff;transform:translateX(2px)}
+.card-icon-wrap.teal{background:var(--teal-bg);color:var(--teal)}
 
-.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.card-info{flex:1;display:flex;flex-direction:column;gap:2px}
+.card-info h2{font-size:16px;font-weight:600;letter-spacing:-0.2px}
+.card-info .sub{font-size:12px;color:var(--text-muted);line-height:1.4}
+.card-arrow{width:32px;height:32px;border-radius:50%;background:var(--bg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;transition:all var(--ease);flex-shrink:0;color:var(--text-muted)}
+.card:hover .card-arrow,.primary-card:hover .card-arrow{background:var(--blue);border-color:var(--blue);color:#fff;transform:translateX(2px)}
+.card-arrow svg{width:14px;height:14px}
+
+/* --- Primary Card (full-width, hero-ish) specifics --- */
+.primary-card .card-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px}
+.primary-card .card-header-left{display:flex;align-items:flex-start;gap:16px}
+
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
 .stat-box{background:var(--bg);border-radius:var(--radius-sm);padding:12px 16px;border:1px solid var(--border);transition:all var(--ease)}
 .stat-box:hover{border-color:var(--border-hover)}
 .stat-label{font-size:11px;color:var(--text-muted);margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:0.3px}
@@ -147,39 +176,65 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
 .stat-change .chg-badge.down{background:var(--fall-bg);color:var(--fall)}
 .stat-change svg{width:12px;height:12px}
 
-.card-meta{display:flex;align-items:center;justify-content:space-between;margin-top:14px;font-size:12px;color:var(--text-muted)}
-.card-meta .live-dot{width:6px;height:6px;border-radius:50%;background:var(--fall);display:inline-block;margin-right:5px;animation:pulse 2s ease-in-out infinite}
+.card-meta{display:flex;align-items:center;justify-content:space-between;margin-top:16px;padding-top:14px;border-top:1px solid var(--border);font-size:12px;color:var(--text-muted)}
+.card-meta .live-dot{width:6px;height:6px;border-radius:50%;background:var(--rise);display:inline-block;margin-right:5px;animation:pulse 2s ease-in-out infinite}
 
-.feature-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+/* --- Compact / secondary card stats --- */
+.stats-row-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* --- Feature tags (compact) --- */
+.feature-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:14px}
 .feature-tag{padding:4px 10px;border-radius:999px;font-size:11px;font-weight:500;background:var(--bg);border:1px solid var(--border);color:var(--text-sec)}
+.feature-tag.cat{background:var(--blue-bg);border-color:rgba(37,99,235,0.12);color:var(--blue)}
 
-.footer{position:relative;z-index:1;text-align:center;padding:32px;font-size:12px;color:var(--text-muted)}
-.footer a{color:var(--blue);text-decoration:none;font-weight:500;transition:opacity var(--ease)}
-.footer a:hover{opacity:0.8}
+/* === Divider === */
+.section-divider{display:flex;align-items:center;gap:16px;padding:8px 0 24px;animation:fadeUp 0.5s var(--ease) both}
+.section-divider-line{flex:1;height:1px;background:linear-gradient(to right,var(--border),transparent)}
+.section-divider-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted);white-space:nowrap}
 
+/* === Footer Stats Bar === */
+.footer-bar{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:24px 32px 48px}
+.footer-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:24px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg)}
+.footer-item{text-align:center}
+.footer-item .num{font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--blue)}
+.footer-item .label{font-size:11px;color:var(--text-muted);margin-top:4px;text-transform:uppercase;letter-spacing:0.5px}
+.footer-text{text-align:center;padding:20px 0 40px;font-size:12px;color:var(--text-muted)}
+.footer-text a{color:var(--blue);text-decoration:none;font-weight:500;transition:opacity var(--ease)}
+.footer-text a:hover{opacity:0.8}
+
+/* === Animations === */
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+/* === Toast === */
 .toast-container{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:999;display:flex;flex-direction:column;gap:8px;pointer-events:none}
 .toast{padding:10px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;color:#fff;box-shadow:var(--shadow-hover);pointer-events:auto;animation:toastIn 0.3s var(--ease)}
 .toast.success{background:#059669}
 .toast.error{background:#dc2626}
 @keyframes toastIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 
-@media(max-width:640px){
+/* === Responsive === */
+@media(max-width:768px){
   .header{padding:0 16px;height:48px}
-  .main{padding:24px 16px 60px}
+  .header-nav{display:none}
+  .hero{padding:40px 16px 24px}
   .hero h1{font-size:28px}
-  .hero{margin-bottom:32px}
-  .bento{grid-template-columns:1fr;gap:12px}
-  .bento-card.stock{grid-column:1}
-  .card-inner{padding:20px}
+  .hero-stats{gap:16px}
+  .main{padding:0 16px 60px}
+  .grid-2{grid-template-columns:1fr;gap:12px}
   .stats-row{grid-template-columns:1fr 1fr}
+  .primary-card .card-inner{padding:20px}
+  .card .card-inner{padding:20px}
+  .footer-grid{grid-template-columns:1fr 1fr;padding:16px}
+  .section{padding:16px 0}
   .bg-orb{filter:blur(60px)}
   .bg-orb:nth-child(1){width:250px;height:250px}
   .bg-orb:nth-child(2){width:200px;height:200px}
   .bg-orb:nth-child(3){width:180px;height:180px}
 }
-@media(min-width:641px) and (max-width:900px){
-  .bento{grid-template-columns:1fr 1fr}
-  .bento-card.stock{grid-column:1/-1}
+@media(min-width:769px) and (max-width:1024px){
+  .main{padding:0 24px 80px}
+  .footer-bar{padding:24px 24px 48px}
 }
 </style>
 </head>
@@ -198,6 +253,13 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/><line x1="12" y1="22" x2="12" y2="15.5"/><polyline points="22 8.5 12 15.5 2 8.5"/></svg>
       </div>
       <span class="header-title">Hermes Study</span>
+      <nav class="header-nav">
+        <a href="/stock">股市</a>
+        <a href="/memo">备忘录</a>
+        <a href="/monitor">监控</a>
+        <a href="/tools">工具箱</a>
+        <a href="/music-player">音乐</a>
+      </nav>
     </div>
     <div class="header-right">
       <span class="header-time" id="headerTime"></span>
@@ -208,29 +270,50 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     </div>
   </header>
 
-  <div class="main">
-    <div class="hero">
-      <div class="hero-badge"><span class="dot"></span> 实验项目</div>
-      <h1>欢迎使用 <span class="gradient">Hermes Study</span></h1>
-      <p>个人学习实验项目，集成多个功能模块，涵盖数据可视化、开发工具与日常效率应用。</p>
-      <div class="hero-tech">
-        <span class="pill">Spring Boot 3.2</span>
-        <span class="pill">MyBatis + MySQL</span>
-        <span class="pill">Java 17</span>
+  <div class="hero">
+    <div class="hero-badge"><span class="dot"></span> 个人实验平台</div>
+    <h1>欢迎使用 <span class="gradient">Hermes Study</span></h1>
+    <p>集成行情追踪、效率工具与系统监控，构建个人开发工作台。</p>
+    <div class="hero-stats">
+      <div class="hero-stat">
+        <div class="num">5</div>
+        <div class="label">功能模块</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">17</div>
+        <div class="label">开发工具</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num" id="heroStockStatus" style="color:var(--text-muted)">--</div>
+        <div class="label">行情状态</div>
+      </div>
+      <div class="hero-stat">
+        <div class="num">Spring</div>
+        <div class="label">技术栈</div>
       </div>
     </div>
+  </div>
 
-    <div class="bento">
-      <a class="bento-card stock" href="/stock" id="stockCard">
+  <div class="main">
+
+    <!-- ======== Section 1: 核心应用 ======== -->
+    <div class="section">
+      <div class="section-header">
+        <span class="section-tag">核心应用</span>
+        <h2 class="section-title">实时行情 · 数据驱动</h2>
+        <p class="section-desc">A 股指数实时跟踪，资金流向一览无余</p>
+      </div>
+
+      <a class="primary-card" href="/stock" id="stockCard">
         <div class="card-inner">
-          <div class="card-top">
-            <div style="display:flex;align-items:flex-start;gap:14px">
-              <div class="card-icon-wrap blue">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
+          <div class="card-header">
+            <div class="card-header-left">
+              <div class="card-icon-wrap blue" style="width:48px;height:48px">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>
               </div>
               <div class="card-info">
-                <h2>股市情报站</h2>
-                <p>A 股实时行情 · 热搜 · 资金流向</p>
+                <h2 style="font-size:18px">股市情报站</h2>
+                <span class="sub">A 股实时行情 · 板块轮动 · 资金流向 · 热门新闻</span>
               </div>
             </div>
             <div class="card-arrow">
@@ -261,158 +344,207 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
           </div>
           <div class="card-meta">
             <span><span class="live-dot"></span><span id="stockMeta">加载中...</span></span>
-            <span>点击查看详情</span>
-          </div>
-        </div>
-      </a>
-
-      <a class="bento-card" href="/memo">
-        <div class="card-inner">
-          <div class="card-top">
-            <div style="display:flex;align-items:flex-start;gap:14px">
-              <div class="card-icon-wrap amber">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              </div>
-              <div class="card-info">
-                <h2>Memo Board</h2>
-                <p>个人备忘录管理</p>
-              </div>
-            </div>
-            <div class="card-arrow">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </div>
-          </div>
-          <div class="stats-row" style="grid-template-columns:1fr 1fr">
-            <div class="stat-box">
-              <div class="stat-label">总计</div>
-              <div class="stat-value" style="font-size:20px;color:var(--amber)" id="memoCount">--</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">分类</div>
-              <div class="stat-value" style="font-size:20px;color:var(--amber)" id="memoCats">--</div>
-            </div>
-          </div>
-          <div class="card-meta">
-            <span id="memoMeta">加载中...</span>
-            <span>点击进入</span>
-          </div>
-        </div>
-      </a>
-
-      <a class="bento-card" href="/music-player">
-        <div class="card-inner">
-          <div class="card-top">
-            <div style="display:flex;align-items:flex-start;gap:14px">
-              <div class="card-icon-wrap green">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
-              </div>
-              <div class="card-info">
-                <h2>Cyber Music</h2>
-                <p>桌面音乐播放器</p>
-              </div>
-            </div>
-            <div class="card-arrow">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </div>
-          </div>
-          <div class="stats-row" style="grid-template-columns:1fr 1fr">
-            <div class="stat-box">
-              <div class="stat-label">版本</div>
-              <div class="stat-value" style="font-size:20px;color:var(--green-spotify)">v2.4</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">格式</div>
-              <div class="stat-value" style="font-size:20px;color:var(--green-spotify)">7 种</div>
-            </div>
-          </div>
-          <div class="feature-tags">
-            <span class="feature-tag">Spotify 风格</span>
-            <span class="feature-tag">粒子动画</span>
-            <span class="feature-tag">频谱可视化</span>
-          </div>
-        </div>
-      </a>
-
-      <a class="bento-card stock" href="/monitor">
-        <div class="card-inner">
-          <div class="card-top">
-            <div style="display:flex;align-items:flex-start;gap:14px">
-              <div class="card-icon-wrap blue">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-              </div>
-              <div class="card-info">
-                <h2>服务器监控</h2>
-                <p>ECS 实时指标 · CPU/内存/磁盘/负载趋势</p>
-              </div>
-            </div>
-            <div class="card-arrow">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </div>
-          </div>
-          <div class="stats-row" id="monitorPreview">
-            <div class="stat-box">
-              <div class="stat-label">CPU</div>
-              <div class="stat-value" style="font-size:20px;color:var(--blue)" id="monCpu">--</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">内存</div>
-              <div class="stat-value" style="font-size:20px;color:var(--blue)" id="monMem">--</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">磁盘</div>
-              <div class="stat-value" style="font-size:20px;color:var(--blue)" id="monDsk">--</div>
-            </div>
-            <div class="stat-box">
-              <div class="stat-label">负载</div>
-              <div class="stat-value" style="font-size:20px;color:var(--blue)" id="monLoad">--</div>
-            </div>
-          </div>
-          <div class="card-meta">
-            <span id="monMeta">加载中...</span>
-            <span>实时监控 · Supabase</span>
-          </div>
-        </div>
-      </a>
-
-      <a class="bento-card stock" href="/tools">
-        <div class="card-inner">
-          <div class="card-top">
-            <div style="display:flex;align-items:flex-start;gap:14px">
-              <div class="card-icon-wrap purple">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-              </div>
-              <div class="card-info">
-                <h2>开发者工具箱</h2>
-                <p>17 款纯前端开发效率工具，无需后端依赖</p>
-              </div>
-            </div>
-            <div class="card-arrow">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
-            </div>
-          </div>
-          <div class="feature-tags" style="margin-top:0;margin-bottom:14px">
-            <span class="feature-tag">JSON / YAML / XML</span>
-            <span class="feature-tag">SQL 格式化</span>
-            <span class="feature-tag">正则测试</span>
-            <span class="feature-tag">Cron 生成</span>
-            <span class="feature-tag">Base64 / Hash</span>
-            <span class="feature-tag">Diff 对比</span>
-            <span class="feature-tag">HTTP 调试</span>
-            <span class="feature-tag">时间戳转换</span>
-            <span class="feature-tag">UUID / 密码</span>
-            <span class="feature-tag">打字测试</span>
-          </div>
-          <div class="card-meta">
-            <span>5 大分类 · 纯前端 SPA · 零依赖</span>
-            <span>点击打开工具箱</span>
+            <span>查看完整行情 →</span>
           </div>
         </div>
       </a>
     </div>
+
+    <!-- ======== Section 2: 效率工具 ======== -->
+    <div class="section" style="content-visibility:auto;contain-intrinsic-size:400px">
+      <div class="section-header">
+        <span class="section-tag">效率工具</span>
+        <h2 class="section-title">记录 · 创作 · 娱乐</h2>
+        <p class="section-desc">日常使用的轻量级应用</p>
+      </div>
+
+      <div class="grid-2">
+        <a class="card" href="/memo">
+          <div class="card-inner">
+            <div class="card-top">
+              <div style="display:flex;align-items:flex-start;gap:14px">
+                <div class="card-icon-wrap amber">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                </div>
+                <div class="card-info">
+                  <h2>Memo Board</h2>
+                  <span class="sub">个人备忘录 · 分类管理</span>
+                </div>
+              </div>
+              <div class="card-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </div>
+            </div>
+            <div class="stats-row-2">
+              <div class="stat-box">
+                <div class="stat-label">总计</div>
+                <div class="stat-value" style="font-size:20px;color:var(--amber)" id="memoCount">--</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">分类</div>
+                <div class="stat-value" style="font-size:20px;color:var(--amber)" id="memoCats">--</div>
+              </div>
+            </div>
+            <div class="card-meta" style="margin-top:12px;padding-top:12px">
+              <span id="memoMeta">加载中...</span>
+              <span>进入备忘录 →</span>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="/music-player">
+          <div class="card-inner">
+            <div class="card-top">
+              <div style="display:flex;align-items:flex-start;gap:14px">
+                <div class="card-icon-wrap green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+                </div>
+                <div class="card-info">
+                  <h2>Cyber Music</h2>
+                  <span class="sub">桌面音乐播放器</span>
+                </div>
+              </div>
+              <div class="card-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </div>
+            </div>
+            <div class="stats-row-2">
+              <div class="stat-box">
+                <div class="stat-label">版本</div>
+                <div class="stat-value" style="font-size:20px;color:var(--green-spotify)">v2.4</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">格式</div>
+                <div class="stat-value" style="font-size:20px;color:var(--green-spotify)">7 种</div>
+              </div>
+            </div>
+            <div class="feature-tags">
+              <span class="feature-tag">Spotify 风格</span>
+              <span class="feature-tag">粒子动画</span>
+              <span class="feature-tag">频谱可视化</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
+    <!-- ======== Section 3: 平台管理 ======== -->
+    <div class="section" style="content-visibility:auto;contain-intrinsic-size:500px">
+      <div class="section-header">
+        <span class="section-tag">平台管理</span>
+        <h2 class="section-title">基础设施 · 开发者工具</h2>
+        <p class="section-desc">服务器监控与纯前端效率工具集</p>
+      </div>
+
+      <div class="grid-full" style="display:flex;flex-direction:column;gap:16px">
+        <a class="primary-card" href="/monitor" id="monitorCard">
+          <div class="card-inner">
+            <div class="card-header">
+              <div class="card-header-left">
+                <div class="card-icon-wrap teal" style="width:48px;height:48px">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </div>
+                <div class="card-info">
+                  <h2 style="font-size:18px">服务器监控</h2>
+                  <span class="sub">ECS 实时指标 · CPU / 内存 / 磁盘 / 负载趋势</span>
+                </div>
+              </div>
+              <div class="card-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </div>
+            </div>
+            <div class="stats-row" id="monitorPreview">
+              <div class="stat-box">
+                <div class="stat-label">CPU</div>
+                <div class="stat-value" style="font-size:20px;color:var(--teal)" id="monCpu">--</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">内存</div>
+                <div class="stat-value" style="font-size:20px;color:var(--teal)" id="monMem">--</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">磁盘</div>
+                <div class="stat-value" style="font-size:20px;color:var(--teal)" id="monDsk">--</div>
+              </div>
+              <div class="stat-box">
+                <div class="stat-label">负载</div>
+                <div class="stat-value" style="font-size:20px;color:var(--teal)" id="monLoad">--</div>
+              </div>
+            </div>
+            <div class="card-meta">
+              <span id="monMeta">加载中...</span>
+              <span>实时监控 · Supabase →</span>
+            </div>
+          </div>
+        </a>
+
+        <a class="card" href="/tools">
+          <div class="card-inner">
+            <div class="card-top">
+              <div style="display:flex;align-items:flex-start;gap:14px">
+                <div class="card-icon-wrap purple" style="width:48px;height:48px">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                </div>
+                <div class="card-info">
+                  <h2 style="font-size:18px">开发者工具箱</h2>
+                  <span class="sub">17 款纯前端效率工具，无需后端依赖</span>
+                </div>
+              </div>
+              <div class="card-arrow">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+              </div>
+            </div>
+            <div class="feature-tags" style="margin-top:2px">
+              <span class="feature-tag cat">数据处理</span>
+              <span class="feature-tag cat">编码转换</span>
+              <span class="feature-tag cat">格式工具</span>
+              <span class="feature-tag cat">文本处理</span>
+              <span class="feature-tag cat">网络调试</span>
+              <span class="feature-tag">JSON / YAML / XML</span>
+              <span class="feature-tag">SQL 格式化</span>
+              <span class="feature-tag">正则测试</span>
+              <span class="feature-tag">Cron 生成</span>
+              <span class="feature-tag">Base64 / Hash</span>
+              <span class="feature-tag">Diff 对比</span>
+              <span class="feature-tag">HTTP 调试</span>
+              <span class="feature-tag">时间戳转换</span>
+              <span class="feature-tag">UUID / 密码</span>
+              <span class="feature-tag">打字测试</span>
+            </div>
+            <div class="card-meta" style="margin-top:12px">
+              <span>5 大分类 · 纯前端 SPA</span>
+              <span>打开工具箱 →</span>
+            </div>
+          </div>
+        </a>
+      </div>
+    </div>
+
   </div>
 
-  <div class="footer">
-    Hermes Study · <a href="https://github.com/dsqblack/hermes-study" target="_blank">GitHub</a>
+  <!-- === Footer Stats === -->
+  <div class="footer-bar">
+    <div class="footer-grid">
+      <div class="footer-item">
+        <div class="num">5</div>
+        <div class="label">在线模块</div>
+      </div>
+      <div class="footer-item">
+        <div class="num">17</div>
+        <div class="label">开发工具</div>
+      </div>
+      <div class="footer-item">
+        <div class="num" id="footerStockStatus">--</div>
+        <div class="label">行情接口</div>
+      </div>
+      <div class="footer-item">
+        <div class="num" id="footerServerStatus">--</div>
+        <div class="label">服务器状态</div>
+      </div>
+    </div>
+    <div class="footer-text">
+      Hermes Study · <a href="https://github.com/dsqblack/hermes-study" target="_blank">GitHub</a>
+    </div>
   </div>
 </div>
 
@@ -463,6 +595,11 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
       if (d.code === 0 && d.indices && d.indices.length) {
         document.getElementById('stockStatus').textContent = '正常';
         document.getElementById('stockStatus').style.color = 'var(--fall)';
+        // update hero & footer status
+        var heroEl = document.getElementById('heroStockStatus');
+        if (heroEl) { heroEl.textContent = '在线'; heroEl.style.color = 'var(--fall)'; }
+        var footerEl = document.getElementById('footerStockStatus');
+        if (footerEl) { footerEl.textContent = '在线'; footerEl.style.color = 'var(--fall)'; }
         d.indices.slice(0, 2).forEach(function(idx) {
           var isSSE = idx.name.indexOf('上证') !== -1;
           var el = document.getElementById(isSSE ? 'stock_ssec' : 'stock_szse');
@@ -480,6 +617,10 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
     }).catch(function() {
       document.getElementById('stockStatus').textContent = '离线';
       document.getElementById('stockStatus').style.color = 'var(--text-muted)';
+      var heroEl = document.getElementById('heroStockStatus');
+      if (heroEl) { heroEl.textContent = '离线'; heroEl.style.color = 'var(--text-muted)'; }
+      var footerEl = document.getElementById('footerStockStatus');
+      if (footerEl) { footerEl.textContent = '离线'; footerEl.style.color = 'var(--text-muted)'; }
     });
   }
   loadStockSummary();
@@ -515,9 +656,14 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:1
         document.getElementById('monDsk').textContent = (m.disk_usage || 0).toFixed(0) + '%';
         document.getElementById('monLoad').textContent = (m.load_average || 0).toFixed(2);
         document.getElementById('monMeta').textContent = '更新于 ' + new Date(m.created_at).toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'});
+        var footerEl = document.getElementById('footerServerStatus');
+        if (footerEl) { footerEl.textContent = '正常'; footerEl.style.color = 'var(--fall)'; }
       }
     }).catch(function() {
       document.getElementById('monCpu').textContent = '--';
+      document.getElementById('monMem').textContent = '--';
+      document.getElementById('monDsk').textContent = '--';
+      document.getElementById('monLoad').textContent = '--';
     });
   }
   loadMonitorSummary();
